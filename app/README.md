@@ -1,7 +1,7 @@
-# App Module Notes
+# App 模块说明
 
-The main project documentation lives in the repository root:
+主项目说明请查看仓库根目录下的文档：
 
 [README.md](../README.md)
 
-This `app` directory is the Android application module used by Gradle.
+`app` 目录是当前 Android 应用的 Gradle 模块。
