@@ -1,92 +1,120 @@
-# 📚 StudyReminder - 学习提醒器 Android App
+# StudyReminder
 
-## 功能列表
+StudyReminder is an Android study reminder app for fixed study slots. You can set recurring time ranges, choose how reminders are delivered, and optionally use an accessibility service plus a whitelist to detect when you leave study mode and switch to distracting apps.
 
-| 功能 | 说明 |
-|------|------|
-| ⏰ 自定义计时 | 时间选择器设置学习时长 |
-| 🔔 通知提醒 | 多次刷新通知，30秒后自动清除 |
-| 💊 超级岛提醒 | 顶部动态胶囊，从小扩展弹出 |
-| 🪟 后台小窗弹出 | 悬浮窗，可拖动，确认返桌面 |
-| 📱 全屏弹出 | 全屏提醒界面，确认后自动返桌面 |
-| 🏠 强制返回桌面 | 直接跳回桌面（与弹窗二选一） |
-| 🤖 AI屏幕识别 | 无障碍服务读取屏幕内容，AI生成针对性挑衅语 |
-| 🎭 角色选择 | 多种角色：傲娇学姐/元气学妹/冷酷学长/可爱小猫 |
+The project is built with the classic Android View system in Kotlin and focuses on a direct, device-side reminder workflow rather than cloud-dependent features.
 
----
+## Features
 
-## 项目结构
+- Fixed recurring study slots with weekday selection
+- Exact-alarm based reminders for scheduled study time
+- Multiple reminder styles including notification, dynamic-island style overlay, floating small window, full-screen reminder, and force return to home screen
+- Optional accessibility-assisted interruption detection
+- App whitelist for allowed apps during study time
+- Foreground countdown service during active study sessions
 
+## Screenshots
+
+Main screen:
+
+![Main UI](main_ui.jpg)
+
+Whitelist management:
+
+![Whitelist UI](whitelist_ui.jpg)
+
+Project experiment slide:
+
+![Parallel Data](parallel_data.jpg)
+
+## Tech Stack
+
+- Kotlin
+- Android SDK 34
+- Android ViewBinding
+- AlarmManager
+- Foreground Service
+- AccessibilityService
+- SharedPreferences for local persistence
+
+## Requirements
+
+- Android Studio Hedgehog or newer should work
+- Android 10+ device or emulator
+- `minSdk 29`
+- `targetSdk 34`
+
+## Getting Started
+
+1. Clone this repository.
+2. Open the project root in Android Studio.
+3. Let Gradle sync finish.
+4. Run the `app` module on a device or emulator.
+
+If you prefer the command line:
+
+```bash
+./gradlew assembleDebug
 ```
+
+On Windows:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
+## How It Works
+
+1. Create one or more study slots such as `10:00-11:30` on selected weekdays.
+2. The app schedules alarms for the next active slot.
+3. When the slot starts, a foreground timer service begins running.
+4. Depending on your settings, the app shows reminders through notifications, overlays, full-screen UI, or a forced home-screen jump.
+5. If accessibility mode is enabled, the app can watch app switches during study time and trigger reminders when you open a non-whitelisted app.
+
+## Permissions
+
+| Permission | Purpose |
+| --- | --- |
+| `POST_NOTIFICATIONS` | Show reminder notifications |
+| `SYSTEM_ALERT_WINDOW` | Show overlays and floating windows |
+| `FOREGROUND_SERVICE` | Keep the study timer alive |
+| `USE_FULL_SCREEN_INTENT` | Show full-screen reminder notifications |
+| `SCHEDULE_EXACT_ALARM` | Improve time accuracy for scheduled study slots |
+| Accessibility service | Optional, used for app-switch detection during study time |
+
+## Project Structure
+
+```text
 app/src/main/
 ├── java/com/study/reminder/
-│   ├── ui/
-│   │   ├── MainActivity.kt           # 主界面
-│   │   └── FullScreenAlertActivity.kt # 全屏提醒
-│   ├── service/
-│   │   ├── TimerService.kt           # 前台计时服务（核心）
-│   │   ├── OverlayService.kt         # 悬浮窗/超级岛服务
-│   │   ├── ScreenAccessibilityService.kt # 屏幕内容读取
-│   │   └── BootReceiver.kt           # 开机自启
-│   ├── viewmodel/
-│   │   └── TimerViewModel.kt         # 状态管理
-│   └── helper/
-│       ├── AiHelper.kt               # Claude API调用
-│       ├── CharacterHelper.kt        # 角色资源映射
-│       └── NotificationHelper.kt     # 通知管理
+│   ├── helper/      # notifications, scheduling, whitelist, message helpers
+│   ├── model/       # slot model and local repository
+│   ├── service/     # timer, overlays, boot receiver, accessibility service
+│   ├── ui/          # activities and adapters
+│   └── viewmodel/   # simple UI state holder
 └── res/
+    ├── drawable/
     ├── layout/
-    │   ├── activity_main.xml
-    │   ├── activity_fullscreen_alert.xml
-    │   ├── overlay_dynamic_island.xml
-    │   └── overlay_small_window.xml
+    ├── mipmap/
+    ├── values/
     └── xml/
-        └── accessibility_service_config.xml
 ```
 
----
+## Current Notes
 
-## 导入步骤
+- The main reminder flow currently works locally without requiring any external AI service.
+- There is AI-related helper code in the repository, but the current shipped UI is centered on local reminder behavior and local taunt messages.
+- Overlay, full-screen, and exact-alarm behavior may vary slightly across Android vendors because of system permission and background-launch policies.
 
-1. 用 **Android Studio** 打开 `StudyReminder` 文件夹
-2. 等待 Gradle 同步完成
-3. 在 `res/drawable/` 中添加以下图片资源：
-   - `ic_timer.xml` — 计时图标
-   - `ic_alert.xml` — 提醒图标
-   - `ic_character_default.png` — 默认角色
-   - `ic_character_tsundere.png` — 傲娇学姐
-   - `ic_character_genki.png` — 元气学妹
-   - `ic_character_cool.png` — 冷酷学长
-   - `ic_character_cat.png` — 可爱小猫
-4. 连接手机 → Run
+## Development
 
----
+Useful commands:
 
-## 权限说明
+```powershell
+.\gradlew.bat assembleDebug
+.\gradlew.bat lintDebug
+```
 
-| 权限 | 用途 |
-|------|------|
-| SYSTEM_ALERT_WINDOW | 悬浮窗/小窗/超级岛 |
-| POST_NOTIFICATIONS | 通知提醒 |
-| FOREGROUND_SERVICE | 后台计时保活 |
-| BIND_ACCESSIBILITY_SERVICE | AI屏幕内容识别 |
-| USE_FULL_SCREEN_INTENT | 全屏提醒 |
+## License
 
----
-
-## AI 功能配置
-
-1. 点击主界面 **🔑 AI Key** 按钮
-2. 输入你的 **Anthropic API Key**
-3. 开启 **🤖 AI识别屏幕** 开关
-4. 在手机设置 → 无障碍 → 学习提醒器 → 开启
-
-AI 会读取当前屏幕内容（如：刷B站、打游戏），自动生成针对性挑衅话语！
-
----
-
-## 小窗 & 全屏 互斥说明
-
-- **小窗弹出** 和 **全屏弹出** 同时只能选一个
-- **强制返桌面** 与以上两项也互斥
-- 通知提醒和超级岛可以叠加使用
+No license has been added yet. All rights reserved by default until a license is chosen.
