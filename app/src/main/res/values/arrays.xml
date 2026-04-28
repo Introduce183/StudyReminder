@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="character_names">
+        <item>学习监督者</item>
+        <item>傲娇学姐</item>
+        <item>元气学妹</item>
+        <item>冷酷学长</item>
+        <item>可爱小猫</item>
+    </string-array>
+</resources>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="10dp"
+    android:paddingHorizontal="4dp">
+
+    <!-- 时间信息 -->
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:orientation="vertical">
+        <TextView android:id="@+id/tv_slot_label" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:textSize="14sp"
+            android:textStyle="bold" android:textColor="#1A1A2E"
+            android:layout_marginBottom="2dp"/>
+        <TextView android:id="@+id/tv_slot_time" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:textSize="18sp"
+            android:textStyle="bold" android:textColor="#FF5C5C"
+            android:fontFamily="monospace" android:layout_marginBottom="2dp"/>
+        <TextView android:id="@+id/tv_slot_days" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#888888"/>
+    </LinearLayout>
+
+    <!-- 开关 -->
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switch_slot_enabled"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"/>
+
+    <!-- 删除按钮 -->
+    <ImageButton android:id="@+id/btn_slot_delete"
+        android:layout_width="32dp" android:layout_height="32dp"
+        android:src="@android:drawable/ic_menu_delete"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:tint="#CCCCCC"/>
+</LinearLayout>

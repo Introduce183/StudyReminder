@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">学习提醒器</string>
+    <string name="accessibility_service_label">学习提醒器 - 学习时间监督</string>
+</resources>
