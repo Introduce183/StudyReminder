@@ -192,10 +192,11 @@ class MainActivity : AppCompatActivity() {
         if (isShowingStartupGuide) return
 
         val prefs = getSharedPreferences("study_prefs", MODE_PRIVATE)
-        val onboardingShown = prefs.getBoolean("startup_permission_guide_shown", false)
+        val startupIntroShown = prefs.getBoolean("startup_intro_shown", false)
+        val backgroundGuideShown = prefs.getBoolean("startup_background_guide_shown", false)
         val accessibilityReminded = prefs.getBoolean("startup_accessibility_reminded", false)
 
-        if (!onboardingShown) {
+        if (!startupIntroShown) {
             isShowingStartupGuide = true
             showGuideSheet(
                 title = "首次使用建议先完成这些设置",
@@ -204,13 +205,45 @@ class MainActivity : AppCompatActivity() {
                 secondaryText = "稍后",
                 onDismiss = { isShowingStartupGuide = false }
             ) {
-                prefs.edit().putBoolean("startup_permission_guide_shown", true).apply()
+                prefs.edit().putBoolean("startup_intro_shown", true).apply()
                 isShowingStartupGuide = false
-                if (!Settings.canDrawOverlays(this)) {
-                    maybeGuideOverlayPermission()
-                } else {
-                    openBackgroundPermissionSettings()
-                }
+                maybeShowStartupGuide()
+            }
+            return
+        }
+
+        if (!Settings.canDrawOverlays(this)) {
+            isShowingStartupGuide = true
+            showGuideSheet(
+                title = "需要悬浮窗权限",
+                message = "动态岛、小窗、全屏悬浮提醒都依赖悬浮窗权限。点击继续后会跳到系统设置页，请手动打开。",
+                primaryText = "去授权",
+                secondaryText = "暂不",
+                onDismiss = { isShowingStartupGuide = false }
+            ) {
+                isShowingStartupGuide = false
+                overlayPermissionLauncher.launch(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    )
+                )
+            }
+            return
+        }
+
+        if (!backgroundGuideShown) {
+            isShowingStartupGuide = true
+            showGuideSheet(
+                title = "建议打开后台弹出和自启动",
+                message = "为了让提醒更稳定，建议继续检查后台弹出界面、自启动和电池优化白名单。不同机型入口不一样，应用会尽量帮你打开对应页面。",
+                primaryText = "去设置",
+                secondaryText = "先跳过",
+                onDismiss = { isShowingStartupGuide = false }
+            ) {
+                prefs.edit().putBoolean("startup_background_guide_shown", true).apply()
+                isShowingStartupGuide = false
+                openBackgroundPermissionSettings()
             }
             return
         }
@@ -257,6 +290,10 @@ class MainActivity : AppCompatActivity() {
                 primaryText = "去设置",
                 secondaryText = "暂不"
             ) {
+                getSharedPreferences("study_prefs", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("startup_background_guide_shown", true)
+                    .apply()
                 openBackgroundPermissionSettings()
             }
             return
