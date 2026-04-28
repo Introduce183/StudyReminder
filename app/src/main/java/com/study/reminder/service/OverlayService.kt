@@ -23,15 +23,18 @@ class OverlayService : Service() {
     companion object {
         const val ACTION_SHOW_DYNAMIC_ISLAND = "show_dynamic_island"
         const val ACTION_SHOW_SMALL_WINDOW = "show_small_window"
+        const val ACTION_SHOW_FULLSCREEN_ALERT = "show_fullscreen_alert"
         const val ACTION_DISMISS = "dismiss"
         const val EXTRA_MESSAGE = "message"
         const val EXTRA_EMOJI = "emoji"
         const val EXTRA_CHARACTER = "character"
+        const val EXTRA_GO_HOME_ON_SHOW = "go_home_on_show"
     }
 
     private var windowManager: WindowManager? = null
     private var dynamicIslandView: View? = null
     private var smallWindowView: View? = null
+    private var fullscreenView: View? = null
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -53,6 +56,13 @@ class OverlayService : Service() {
                 val msg = intent.getStringExtra(EXTRA_MESSAGE) ?: "该学习了"
                 val emoji = intent.getStringExtra(EXTRA_EMOJI) ?: "!"
                 showSmallWindow(msg, emoji)
+            }
+
+            ACTION_SHOW_FULLSCREEN_ALERT -> {
+                val msg = intent.getStringExtra(EXTRA_MESSAGE) ?: "该学习了"
+                val emoji = intent.getStringExtra(EXTRA_EMOJI) ?: "!"
+                val goHomeOnShow = intent.getBooleanExtra(EXTRA_GO_HOME_ON_SHOW, false)
+                showFullscreenAlert(msg, emoji, goHomeOnShow)
             }
 
             ACTION_DISMISS -> {
@@ -182,6 +192,62 @@ class OverlayService : Service() {
         }, 10_000L)
     }
 
+    private fun showFullscreenAlert(message: String, emoji: String, goHomeOnShow: Boolean) {
+        if (!ensureOverlayPermission(message, emoji)) {
+            if (goHomeOnShow) goHome()
+            return
+        }
+
+        removeFullscreenAlert()
+        val inflater = LayoutInflater.from(this)
+        val view = inflater.inflate(R.layout.overlay_fullscreen_alert, null)
+
+        view.findViewById<TextView>(R.id.tv_overlay_message).text = message
+        view.findViewById<TextView>(R.id.tv_overlay_emoji).text = emoji
+        view.findViewById<TextView>(R.id.tv_overlay_character_name).text =
+            CharacterHelper.getCharacterName()
+        view.findViewById<ImageView>(R.id.iv_overlay_character)
+            .setImageResource(CharacterHelper.getCharacterDrawable())
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+
+        val added = runCatching {
+            windowManager?.addView(view, params)
+        }.isSuccess
+        if (!added) {
+            if (goHomeOnShow) goHome()
+            NotificationHelper.showRepeatingAlertNotification(this, message, emoji)
+            stopSelf()
+            return
+        }
+
+        fullscreenView = view
+        view.alpha = 0f
+        view.animate().alpha(1f).setDuration(220L).start()
+
+        view.findViewById<View>(R.id.btn_overlay_confirm).setOnClickListener {
+            removeFullscreenAlert()
+            goHome()
+            stopSelf()
+        }
+
+        val autoDismissDelay = if (goHomeOnShow) 1200L else 10_000L
+        handler.postDelayed({
+            removeFullscreenAlert()
+            if (goHomeOnShow) goHome()
+            stopSelf()
+        }, autoDismissDelay)
+    }
+
     private fun ensureOverlayPermission(message: String, emoji: String): Boolean {
         if (Settings.canDrawOverlays(this)) return true
 
@@ -225,9 +291,17 @@ class OverlayService : Service() {
         smallWindowView = null
     }
 
+    private fun removeFullscreenAlert() {
+        fullscreenView?.let {
+            runCatching { windowManager?.removeView(it) }
+        }
+        fullscreenView = null
+    }
+
     private fun removeAllOverlays() {
         removeDynamicIsland()
         removeSmallWindow()
+        removeFullscreenAlert()
     }
 
     private fun goHome() {

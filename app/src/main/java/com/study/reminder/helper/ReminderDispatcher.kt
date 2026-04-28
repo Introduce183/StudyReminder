@@ -3,7 +3,6 @@ package com.study.reminder.helper
 import android.content.Context
 import android.content.Intent
 import com.study.reminder.service.OverlayService
-import com.study.reminder.ui.FullScreenAlertActivity
 
 object ReminderDispatcher {
 
@@ -34,14 +33,12 @@ object ReminderDispatcher {
         val requestFullScreen = enFull || enForce
         val launchedFullScreen = if (requestFullScreen) {
             runCatching {
-                context.startActivity(
-                    FullScreenAlertActivity.createIntent(
-                        context = context,
-                        message = message,
-                        emoji = emoji,
-                        goHomeOnShow = enForce
-                    )
-                )
+                context.startService(Intent(context, OverlayService::class.java).apply {
+                    action = OverlayService.ACTION_SHOW_FULLSCREEN_ALERT
+                    putExtra(OverlayService.EXTRA_MESSAGE, message)
+                    putExtra(OverlayService.EXTRA_EMOJI, emoji)
+                    putExtra(OverlayService.EXTRA_GO_HOME_ON_SHOW, enForce)
+                })
             }.isSuccess
         } else {
             false
