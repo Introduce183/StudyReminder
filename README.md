@@ -18,11 +18,11 @@
 
 主界面：
 
-![主界面](main_ui.jpg)
+<img src="main_ui.jpg" alt="主界面" width="360" />
 
 白名单设置：
 
-![白名单界面](whitelist_ui.jpg)
+<img src="whitelist_ui.jpg" alt="白名单界面" width="360" />
 
 ## APK 下载
 
