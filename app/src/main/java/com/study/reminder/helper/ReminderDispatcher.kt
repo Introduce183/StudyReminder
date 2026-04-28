@@ -3,6 +3,7 @@ package com.study.reminder.helper
 import android.content.Context
 import android.content.Intent
 import com.study.reminder.service.OverlayService
+import com.study.reminder.ui.FullScreenAlertActivity
 
 object ReminderDispatcher {
 
@@ -31,14 +32,28 @@ object ReminderDispatcher {
         enForce: Boolean
     ) {
         val requestFullScreen = enFull || enForce
-        val shouldNotify = enNotif || requestFullScreen
+        val launchedFullScreen = if (requestFullScreen) {
+            runCatching {
+                context.startActivity(
+                    FullScreenAlertActivity.createIntent(
+                        context = context,
+                        message = message,
+                        emoji = emoji,
+                        goHomeOnShow = enForce
+                    )
+                )
+            }.isSuccess
+        } else {
+            false
+        }
+        val shouldNotify = enNotif
 
         if (shouldNotify) {
             NotificationHelper.showRepeatingAlertNotification(
                 context = context,
                 message = message,
                 emoji = emoji,
-                requestFullScreen = requestFullScreen,
+                requestFullScreen = requestFullScreen && !launchedFullScreen,
                 goHomeOnShow = enForce
             )
         }
