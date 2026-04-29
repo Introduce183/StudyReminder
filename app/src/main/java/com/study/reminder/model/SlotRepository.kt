@@ -40,4 +40,11 @@ object SlotRepository {
         }
         saveSlots(context, slots)
     }
+
+    fun updateSlot(context: Context, slot: StudySlot) {
+        val slots = getSlots(context).map {
+            if (it.id == slot.id) slot else it
+        }
+        saveSlots(context, slots)
+    }
 }

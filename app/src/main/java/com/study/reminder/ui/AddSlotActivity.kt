@@ -36,13 +36,24 @@ import com.study.reminder.ui.compose.StudyReminderComposeTheme
 
 class AddSlotActivity : ComponentActivity() {
 
+    companion object {
+        const val EXTRA_SLOT_JSON = "slot_json"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        title = "添加学习时间段"
+
+        val editSlotJson = intent.getStringExtra(EXTRA_SLOT_JSON)
+        val editSlot = editSlotJson?.let {
+            try { StudySlot.fromJson(org.json.JSONObject(it)) } catch (_: Exception) { null }
+        }
+
+        title = if (editSlot != null) "编辑学习时间段" else "添加学习时间段"
 
         setContent {
             StudyReminderComposeTheme {
                 AddSlotScreen(
+                    initialSlot = editSlot,
                     onConfirm = { slot ->
                         setResult(Activity.RESULT_OK, Intent().putExtra("slot_json", slot.toJson().toString()))
                         finish()
@@ -56,17 +67,19 @@ class AddSlotActivity : ComponentActivity() {
 
 @Composable
 private fun AddSlotScreen(
+    initialSlot: StudySlot? = null,
     onConfirm: (StudySlot) -> Unit,
     onCancel: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    var label by remember { mutableStateOf("") }
-    var startHour by remember { mutableStateOf("") }
-    var startMinute by remember { mutableStateOf("") }
-    var endHour by remember { mutableStateOf("") }
-    var endMinute by remember { mutableStateOf("") }
-    var selectedDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5)) }
+    var label by remember { mutableStateOf(initialSlot?.label ?: "") }
+    var startHour by remember { mutableStateOf(initialSlot?.startHour?.toString() ?: "") }
+    var startMinute by remember { mutableStateOf(initialSlot?.startMinute?.toString() ?: "") }
+    var endHour by remember { mutableStateOf(initialSlot?.endHour?.toString() ?: "") }
+    var endMinute by remember { mutableStateOf(initialSlot?.endMinute?.toString() ?: "") }
+    var selectedDays by remember { mutableStateOf(initialSlot?.enableDays ?: setOf(1, 2, 3, 4, 5)) }
+    val isEditing = initialSlot != null
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -168,7 +181,7 @@ private fun AddSlotScreen(
 
             // 按钮
             LiquidGlassButton(
-                text = "确认添加",
+                text = if (isEditing) "确认修改" else "确认添加",
                 onClick = {
                     val sH = startHour.toIntOrNull()
                     val sM = startMinute.toIntOrNull()
@@ -198,10 +211,12 @@ private fun AddSlotScreen(
 
                     onConfirm(
                         StudySlot(
+                            id = initialSlot?.id ?: System.currentTimeMillis(),
                             label = label.trim().ifEmpty { "学习时间" },
                             startHour = sH, startMinute = sM,
                             endHour = eH, endMinute = eM,
-                            enableDays = selectedDays
+                            enableDays = selectedDays,
+                            enabled = initialSlot?.enabled ?: true
                         )
                     )
                 },

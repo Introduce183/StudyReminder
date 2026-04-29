@@ -81,6 +81,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val editSlotLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val json = result.data?.getStringExtra("slot_json") ?: return@registerForActivityResult
+            val slot = StudySlot.fromJson(JSONObject(json))
+            SlotRepository.updateSlot(this, slot)
+            SlotScheduler.rescheduleAll(this)
+            refreshSlotList()
+            Toast.makeText(this, "已更新「${slot.label}」", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         NotificationHelper.createChannels(this)
@@ -118,6 +131,11 @@ class MainActivity : ComponentActivity() {
                             }
                             .setNegativeButton("取消", null)
                             .show()
+                    },
+                    onEditSlot = { slot ->
+                        val intent = Intent(this, AddSlotActivity::class.java)
+                        intent.putExtra(AddSlotActivity.EXTRA_SLOT_JSON, slot.toJson().toString())
+                        editSlotLauncher.launch(intent)
                     },
                     onNotificationChange = { checked ->
                         notificationState.value = checked
@@ -467,6 +485,7 @@ private fun MainScreen(
     onAddSlot: () -> Unit,
     onToggleSlot: (StudySlot) -> Unit,
     onDeleteSlot: (StudySlot) -> Unit,
+    onEditSlot: (StudySlot) -> Unit,
     onNotificationChange: (Boolean) -> Unit,
     onIslandChange: (Boolean) -> Unit,
     onSmallWindowChange: (Boolean) -> Unit,
@@ -536,6 +555,7 @@ private fun MainScreen(
                 StudySlotItem(
                     slot = slot,
                     onToggle = { onToggleSlot(slot) },
+                    onEdit = { onEditSlot(slot) },
                     onDelete = { onDeleteSlot(slot) }
                 )
             }

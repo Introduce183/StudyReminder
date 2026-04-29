@@ -146,6 +146,7 @@ fun GlassCard(
 fun StudySlotItem(
     slot: StudySlot,
     onToggle: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     val dayLabels = listOf("一", "二", "三", "四", "五", "六", "日")
@@ -189,8 +190,14 @@ fun StudySlotItem(
             Switch(
                 checked = slot.enabled,
                 onCheckedChange = { onToggle() },
-                modifier = Modifier.padding(end = 8.dp)
+                modifier = Modifier.padding(end = 4.dp)
             )
+            IconButton(onClick = onEdit) {
+                Text(
+                    text = "✏️",
+                    fontSize = 16.sp
+                )
+            }
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
