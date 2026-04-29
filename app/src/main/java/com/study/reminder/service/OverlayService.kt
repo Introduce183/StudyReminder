@@ -3,6 +3,9 @@ package com.study.reminder.service
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -172,6 +175,10 @@ class OverlayService : Service() {
         }
 
         smallWindowView = view
+        applyGlassMotion(view.findViewById(R.id.view_small_glow_1), 18f, 2200L)
+        applyGlassMotion(view.findViewById(R.id.view_small_glow_2), -16f, 2600L)
+        applyBlur(view.findViewById(R.id.view_small_glow_1), 26f)
+        applyBlur(view.findViewById(R.id.view_small_glow_2), 32f)
 
         view.translationY = 200f
         view.alpha = 0f
@@ -231,6 +238,10 @@ class OverlayService : Service() {
         }
 
         fullscreenView = view
+        applyGlassMotion(view.findViewById(R.id.view_fullscreen_glow_1), -26f, 2600L)
+        applyGlassMotion(view.findViewById(R.id.view_fullscreen_glow_2), 24f, 3000L)
+        applyBlur(view.findViewById(R.id.view_fullscreen_glow_1), 38f)
+        applyBlur(view.findViewById(R.id.view_fullscreen_glow_2), 44f)
         view.alpha = 0f
         view.animate().alpha(1f).setDuration(220L).start()
 
@@ -316,6 +327,27 @@ class OverlayService : Service() {
 
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    private fun applyBlur(view: View?, radius: Float) {
+        if (view == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        view.setRenderEffect(RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP))
+    }
+
+    private fun applyGlassMotion(view: View?, distance: Float, duration: Long) {
+        if (view == null) return
+        view.animate()
+            .translationXBy(distance)
+            .translationYBy(distance / 2f)
+            .setDuration(duration)
+            .withEndAction {
+                view.animate()
+                    .translationX(0f)
+                    .translationY(0f)
+                    .setDuration(duration)
+                    .start()
+            }
+            .start()
     }
 
     override fun onDestroy() {

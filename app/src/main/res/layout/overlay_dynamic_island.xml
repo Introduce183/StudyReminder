@@ -5,9 +5,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="28dp"
-    app:cardBackgroundColor="#CC000000"
-    app:cardElevation="12dp">
+    app:cardCornerRadius="30dp"
+    app:cardBackgroundColor="@android:color/transparent"
+    app:cardElevation="0dp"
+    android:background="@drawable/bg_island_glass">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -31,7 +32,7 @@
             android:layout_height="wrap_content"
             android:text="该学习啦！"
             android:textSize="15sp"
-            android:textColor="#FFFFFF"
+            android:textColor="#F5FFFF"
             android:maxWidth="240dp"
             android:maxLines="2"
             android:ellipsize="end" />

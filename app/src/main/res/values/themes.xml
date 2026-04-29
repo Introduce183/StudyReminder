@@ -4,6 +4,11 @@
         <item name="colorPrimary">@color/accent</item>
         <item name="colorPrimaryVariant">@color/accent_dark</item>
         <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent_pink</item>
+        <item name="colorTertiary">@color/accent_blue</item>
+        <item name="colorSurface">@color/card_bg</item>
+        <item name="colorOutline">@color/accent_light</item>
+        <item name="colorControlActivated">@color/accent</item>
         <item name="android:windowBackground">@color/bg_main</item>
     </style>
 
@@ -12,5 +17,25 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="Widget.StudyReminder.Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:background">@drawable/bg_primary_button</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:minHeight">50dp</item>
+        <item name="android:paddingLeft">18dp</item>
+        <item name="android:paddingRight">18dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <style name="Widget.StudyReminder.Button.Secondary" parent="Widget.Material3.Button">
+        <item name="android:background">@drawable/bg_secondary_button</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:minHeight">50dp</item>
+        <item name="android:paddingLeft">18dp</item>
+        <item name="android:paddingRight">18dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:elevation">0dp</item>
     </style>
 </resources>

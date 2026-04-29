@@ -2,23 +2,24 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/bg_main">
+    android:background="@drawable/bg_app_surface">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="20dp">
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="📚 学习提醒器" android:textSize="26sp" android:textStyle="bold"
+            android:text="🎧 学习提醒器" android:textSize="28sp" android:textStyle="bold"
             android:textColor="@color/text_primary" android:layout_marginBottom="4dp"/>
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="设置固定学习时间段，到点自动提醒" android:textSize="13sp"
+            android:text="初音未来应援色主题 · 固定学习时段提醒" android:textSize="13sp"
             android:textColor="@color/text_secondary" android:layout_marginBottom="20dp"/>
 
         <!-- 时间段列表 -->
         <androidx.cardview.widget.CardView android:layout_width="match_parent"
-            android:layout_height="wrap_content" app:cardCornerRadius="16dp"
-            app:cardElevation="4dp" app:cardBackgroundColor="@color/card_bg"
+            android:layout_height="wrap_content" app:cardCornerRadius="20dp"
+            app:cardElevation="0dp" app:cardBackgroundColor="@android:color/transparent"
             android:layout_marginBottom="16dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_glass"
                 android:orientation="vertical" android:padding="16dp">
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:gravity="center_vertical"
@@ -27,8 +28,8 @@
                         android:layout_weight="1" android:text="📅 学习时间段"
                         android:textSize="16sp" android:textStyle="bold" android:textColor="@color/text_primary"/>
                     <Button android:id="@+id/btn_add_slot" android:layout_width="wrap_content"
-                        android:layout_height="36dp" android:text="＋ 添加" android:textSize="13sp"
-                        android:backgroundTint="@color/accent" android:paddingHorizontal="14dp"/>
+                        android:layout_height="40dp" android:text="＋ 添加" android:textSize="13sp"
+                        style="@style/Widget.StudyReminder.Button.Primary"/>
                 </LinearLayout>
                 <TextView android:id="@+id/tv_slot_hint" android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -43,10 +44,11 @@
 
         <!-- 提醒方式 -->
         <androidx.cardview.widget.CardView android:layout_width="match_parent"
-            android:layout_height="wrap_content" app:cardCornerRadius="16dp"
-            app:cardElevation="4dp" app:cardBackgroundColor="@color/card_bg"
+            android:layout_height="wrap_content" app:cardCornerRadius="20dp"
+            app:cardElevation="0dp" app:cardBackgroundColor="@android:color/transparent"
             android:layout_marginBottom="16dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_glass"
                 android:orientation="vertical" android:padding="16dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="提醒方式" android:textSize="16sp" android:textStyle="bold"
@@ -77,22 +79,23 @@
 
         <!-- 说明卡片 -->
         <androidx.cardview.widget.CardView android:layout_width="match_parent"
-            android:layout_height="wrap_content" app:cardCornerRadius="16dp"
-            app:cardElevation="2dp" app:cardBackgroundColor="#FFF8E1"
+            android:layout_height="wrap_content" app:cardCornerRadius="20dp"
+            app:cardElevation="0dp" app:cardBackgroundColor="@android:color/transparent"
             android:layout_marginBottom="16dp">
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_panel_soft"
                 android:text="💡 时间段到点提醒无需无障碍权限，直接生效！\n无障碍权限仅用于检测「学习中途开手机」功能，可选开启。"
-                android:textSize="13sp" android:textColor="#795548"
+                android:textSize="13sp" android:textColor="@color/info_text"
                 android:padding="14dp" android:lineSpacingMultiplier="1.4"/>
         </androidx.cardview.widget.CardView>
 
         <!-- 工具按钮 -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal">
-            <Button android:id="@+id/btn_whitelist" style="@style/Widget.Material3.Button.OutlinedButton"
+            <Button android:id="@+id/btn_whitelist" style="@style/Widget.StudyReminder.Button.Secondary"
                 android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp" android:text="✅ 白名单"/>
-            <Button android:id="@+id/btn_accessibility_guide" style="@style/Widget.Material3.Button.OutlinedButton"
+            <Button android:id="@+id/btn_accessibility_guide" style="@style/Widget.StudyReminder.Button.Secondary"
                 android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
                 android:text="♿ 无障碍（可选）"/>
         </LinearLayout>
