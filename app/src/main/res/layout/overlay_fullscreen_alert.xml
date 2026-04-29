@@ -4,26 +4,6 @@
     android:layout_height="match_parent"
     android:background="#8A0F2026">
 
-    <View
-        android:id="@+id/view_fullscreen_glow_1"
-        android:layout_width="220dp"
-        android:layout_height="220dp"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="-40dp"
-        android:layout_marginEnd="-30dp"
-        android:alpha="0.55"
-        android:background="@drawable/bg_panel_soft" />
-
-    <View
-        android:id="@+id/view_fullscreen_glow_2"
-        android:layout_width="260dp"
-        android:layout_height="260dp"
-        android:layout_gravity="bottom|start"
-        android:layout_marginBottom="-50dp"
-        android:layout_marginStart="-20dp"
-        android:alpha="0.42"
-        android:background="@drawable/bg_panel_soft" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

@@ -30,6 +30,12 @@ import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private const val PREFS_NAME = "study_prefs"
+        private const val KEY_STARTUP_BACKGROUND_GUIDE_SHOWN = "startup_background_guide_shown"
+        private const val KEY_FULLSCREEN_BACKGROUND_GUIDE_SHOWN = "fullscreen_background_guide_shown"
+    }
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var slotAdapter: SlotAdapter
     private var isShowingStartupGuide = false
@@ -107,7 +113,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupOptions() {
-        val prefs = getSharedPreferences("study_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         binding.switchNotification.isChecked = prefs.getBoolean("opt_notification", true)
         binding.switchDynamicIsland.isChecked = prefs.getBoolean("opt_island", false)
         binding.switchSmallWindow.isChecked = prefs.getBoolean("opt_small_window", false)
@@ -191,9 +197,9 @@ class MainActivity : AppCompatActivity() {
     private fun maybeShowStartupGuide() {
         if (isShowingStartupGuide) return
 
-        val prefs = getSharedPreferences("study_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val startupIntroShown = prefs.getBoolean("startup_intro_shown", false)
-        val backgroundGuideShown = prefs.getBoolean("startup_background_guide_shown", false)
+        val backgroundGuideShown = prefs.getBoolean(KEY_STARTUP_BACKGROUND_GUIDE_SHOWN, false)
         val accessibilityReminded = prefs.getBoolean("startup_accessibility_reminded", false)
 
         if (!startupIntroShown) {
@@ -239,9 +245,12 @@ class MainActivity : AppCompatActivity() {
                 message = "为了让提醒更稳定，建议继续检查后台弹出界面、自启动和电池优化白名单。不同机型入口不一样，应用会尽量帮你打开对应页面。",
                 primaryText = "去设置",
                 secondaryText = "先跳过",
-                onDismiss = { isShowingStartupGuide = false }
+                onDismiss = {
+                    prefs.edit().putBoolean(KEY_STARTUP_BACKGROUND_GUIDE_SHOWN, true).apply()
+                    isShowingStartupGuide = false
+                }
             ) {
-                prefs.edit().putBoolean("startup_background_guide_shown", true).apply()
+                prefs.edit().putBoolean(KEY_STARTUP_BACKGROUND_GUIDE_SHOWN, true).apply()
                 isShowingStartupGuide = false
                 openBackgroundPermissionSettings()
             }
@@ -283,16 +292,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun maybeGuideOverlayPermissionForFullscreen() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+
         if (Settings.canDrawOverlays(this)) {
+            if (prefs.getBoolean(KEY_FULLSCREEN_BACKGROUND_GUIDE_SHOWN, false)) {
+                return
+            }
+
             showGuideSheet(
                 title = "还建议打开后台弹出和自启动",
                 message = "全屏弹出和强制回桌面已经基于悬浮窗实现，但在部分机型上，仍建议额外允许后台弹出界面、自启动和电池白名单，以提高稳定性。",
                 primaryText = "去设置",
-                secondaryText = "暂不"
+                secondaryText = "??",
+                onDismiss = {
+                    prefs.edit().putBoolean(KEY_FULLSCREEN_BACKGROUND_GUIDE_SHOWN, true).apply()
+                }
             ) {
-                getSharedPreferences("study_prefs", MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("startup_background_guide_shown", true)
+                prefs.edit()
+                    .putBoolean(KEY_STARTUP_BACKGROUND_GUIDE_SHOWN, true)
+                    .putBoolean(KEY_FULLSCREEN_BACKGROUND_GUIDE_SHOWN, true)
                     .apply()
                 openBackgroundPermissionSettings()
             }
@@ -303,7 +321,7 @@ class MainActivity : AppCompatActivity() {
             title = "需要悬浮窗和后台弹出权限",
             message = "全屏弹出和强制回桌面依赖悬浮窗权限，部分机型还需要手动允许后台弹出界面。点击继续后会带你去设置。",
             primaryText = "去设置",
-            secondaryText = "暂不"
+            secondaryText = "??"
         ) {
             overlayPermissionLauncher.launch(
                 Intent(

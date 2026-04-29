@@ -17,6 +17,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
+import com.bumptech.glide.Glide
 import com.study.reminder.R
 import com.study.reminder.helper.CharacterHelper
 import com.study.reminder.helper.NotificationHelper
@@ -152,8 +153,7 @@ class OverlayService : Service() {
         view.findViewById<TextView>(R.id.tv_small_emoji).text = emoji
         view.findViewById<TextView>(R.id.tv_small_character_name).text =
             CharacterHelper.getCharacterName()
-        view.findViewById<ImageView>(R.id.iv_small_character)
-            .setImageResource(CharacterHelper.getCharacterDrawable())
+        loadCharacterGif(view.findViewById(R.id.iv_small_character))
 
         val params = WindowManager.LayoutParams(
             dpToPx(300),
@@ -213,8 +213,7 @@ class OverlayService : Service() {
         view.findViewById<TextView>(R.id.tv_overlay_emoji).text = emoji
         view.findViewById<TextView>(R.id.tv_overlay_character_name).text =
             CharacterHelper.getCharacterName()
-        view.findViewById<ImageView>(R.id.iv_overlay_character)
-            .setImageResource(CharacterHelper.getCharacterDrawable())
+        loadCharacterGif(view.findViewById(R.id.iv_overlay_character))
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -238,10 +237,6 @@ class OverlayService : Service() {
         }
 
         fullscreenView = view
-        applyGlassMotion(view.findViewById(R.id.view_fullscreen_glow_1), -26f, 2600L)
-        applyGlassMotion(view.findViewById(R.id.view_fullscreen_glow_2), 24f, 3000L)
-        applyBlur(view.findViewById(R.id.view_fullscreen_glow_1), 38f)
-        applyBlur(view.findViewById(R.id.view_fullscreen_glow_2), 44f)
         view.alpha = 0f
         view.animate().alpha(1f).setDuration(220L).start()
 
@@ -327,6 +322,13 @@ class OverlayService : Service() {
 
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    private fun loadCharacterGif(imageView: ImageView) {
+        Glide.with(this)
+            .asGif()
+            .load(R.raw.study_guardian)
+            .into(imageView)
     }
 
     private fun applyBlur(view: View?, radius: Float) {
