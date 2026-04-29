@@ -2,6 +2,7 @@ package com.study.reminder.helper
 
 import android.app.Notification
 import android.app.NotificationChannel
+import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -100,6 +101,20 @@ object NotificationHelper {
         goHomeOnShow: Boolean = false
     ) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (isDeviceLocked(context)) {
+            val notification = buildAlertNotification(
+                context = context,
+                message = message,
+                emoji = emoji,
+                count = 0,
+                enableFullScreen = requestFullScreen,
+                goHomeOnShow = goHomeOnShow
+            )
+            nm.notify(ALERT_ID, notification)
+            Handler(Looper.getMainLooper()).postDelayed({ nm.cancel(ALERT_ID) }, 30_000L)
+            return
+        }
+
         val handler = Handler(Looper.getMainLooper())
         val totalRepeat = 6
         var count = 0
@@ -175,6 +190,11 @@ object NotificationHelper {
         }
 
         return builder.build()
+    }
+
+    private fun isDeviceLocked(context: Context): Boolean {
+        val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        return keyguardManager.isKeyguardLocked
     }
 
     fun cancelAll(context: Context) {
