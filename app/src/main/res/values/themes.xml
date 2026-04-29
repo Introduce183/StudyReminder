@@ -27,6 +27,11 @@
         <item name="android:paddingRight">18dp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:elevation">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:shadowColor">#66000000</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">6</item>
     </style>
 
     <style name="Widget.StudyReminder.Button.Secondary" parent="Widget.Material3.Button">
@@ -37,5 +42,6 @@
         <item name="android:paddingRight">18dp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:elevation">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
     </style>
 </resources>
