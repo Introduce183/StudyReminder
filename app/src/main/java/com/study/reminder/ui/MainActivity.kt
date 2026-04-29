@@ -512,8 +512,7 @@ private fun MainScreen(
                             )
                             LiquidGlassButton(
                                 text = "＋ 添加",
-                                onClick = onAddSlot,
-                                modifier = Modifier.height(40.dp)
+                                onClick = onAddSlot
                             )
                         }
 

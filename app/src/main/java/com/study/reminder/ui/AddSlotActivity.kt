@@ -207,7 +207,6 @@ private fun AddSlotScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
                     .padding(bottom = 12.dp)
             )
 
@@ -215,9 +214,7 @@ private fun AddSlotScreen(
                 text = "取消",
                 onClick = onCancel,
                 primary = false,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
