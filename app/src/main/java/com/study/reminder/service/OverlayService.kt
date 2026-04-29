@@ -19,6 +19,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.study.reminder.R
+import com.study.reminder.helper.ButtonMotionHelper
 import com.study.reminder.helper.CharacterHelper
 import com.study.reminder.helper.NotificationHelper
 
@@ -184,7 +185,9 @@ class OverlayService : Service() {
         view.alpha = 0f
         view.animate().translationY(0f).alpha(1f).setDuration(350).start()
 
-        view.findViewById<View>(R.id.btn_small_confirm).setOnClickListener {
+        val smallConfirmButton = view.findViewById<View>(R.id.btn_small_confirm)
+        ButtonMotionHelper.attachLiquidPress(smallConfirmButton)
+        smallConfirmButton.setOnClickListener {
             removeSmallWindow()
             goHome()
             stopSelf()
@@ -240,7 +243,9 @@ class OverlayService : Service() {
         view.alpha = 0f
         view.animate().alpha(1f).setDuration(220L).start()
 
-        view.findViewById<View>(R.id.btn_overlay_confirm).setOnClickListener {
+        val overlayConfirmButton = view.findViewById<View>(R.id.btn_overlay_confirm)
+        ButtonMotionHelper.attachLiquidPress(overlayConfirmButton)
+        overlayConfirmButton.setOnClickListener {
             removeFullscreenAlert()
             goHome()
             stopSelf()

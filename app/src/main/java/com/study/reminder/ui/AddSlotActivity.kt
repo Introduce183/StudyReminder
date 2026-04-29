@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.study.reminder.R
+import com.study.reminder.helper.ButtonMotionHelper
 import com.study.reminder.model.StudySlot
 
 class AddSlotActivity : AppCompatActivity() {
@@ -26,8 +27,11 @@ class AddSlotActivity : AppCompatActivity() {
             findViewById<CheckBox>(R.id.cb_sun),
         )
         cbDays.take(5).forEach { it.isChecked = true }
+        val confirmButton = findViewById<Button>(R.id.btn_confirm)
+        val cancelButton = findViewById<Button>(R.id.btn_cancel)
+        ButtonMotionHelper.attachLiquidPress(confirmButton, cancelButton)
 
-        findViewById<Button>(R.id.btn_confirm).setOnClickListener {
+        confirmButton.setOnClickListener {
             val label = findViewById<EditText>(R.id.et_slot_label).text.toString().trim()
             val startH = findViewById<EditText>(R.id.et_start_hour).text.toString().toIntOrNull()
             val startM = findViewById<EditText>(R.id.et_start_minute).text.toString().toIntOrNull()
@@ -60,7 +64,7 @@ class AddSlotActivity : AppCompatActivity() {
             finish()
         }
 
-        findViewById<Button>(R.id.btn_cancel).setOnClickListener { finish() }
+        cancelButton.setOnClickListener { finish() }
     }
 
     override fun onSupportNavigateUp(): Boolean { finish(); return true }

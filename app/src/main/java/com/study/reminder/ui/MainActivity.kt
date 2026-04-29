@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.study.reminder.R
 import com.study.reminder.databinding.ActivityMainBinding
+import com.study.reminder.helper.ButtonMotionHelper
 import com.study.reminder.helper.NotificationHelper
 import com.study.reminder.helper.SlotScheduler
 import com.study.reminder.model.SlotRepository
@@ -166,6 +167,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupButtons() {
+        ButtonMotionHelper.attachLiquidPress(
+            binding.btnAddSlot,
+            binding.btnWhitelist,
+            binding.btnAccessibilityGuide
+        )
+
         binding.btnAddSlot.setOnClickListener {
             addSlotLauncher.launch(Intent(this, AddSlotActivity::class.java))
         }
@@ -366,13 +373,16 @@ class MainActivity : AppCompatActivity() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_permission_guide, null)
         view.findViewById<TextView>(R.id.tv_sheet_title).text = title
         view.findViewById<TextView>(R.id.tv_sheet_message).text = message
-        view.findViewById<Button>(R.id.btn_sheet_primary).text = primaryText
-        view.findViewById<Button>(R.id.btn_sheet_secondary).text = secondaryText
-        view.findViewById<Button>(R.id.btn_sheet_primary).setOnClickListener {
+        val primaryButton = view.findViewById<Button>(R.id.btn_sheet_primary)
+        val secondaryButton = view.findViewById<Button>(R.id.btn_sheet_secondary)
+        primaryButton.text = primaryText
+        secondaryButton.text = secondaryText
+        ButtonMotionHelper.attachLiquidPress(primaryButton, secondaryButton)
+        primaryButton.setOnClickListener {
             dialog.dismiss()
             onPrimary()
         }
-        view.findViewById<Button>(R.id.btn_sheet_secondary).setOnClickListener {
+        secondaryButton.setOnClickListener {
             dialog.dismiss()
         }
         dialog.setContentView(view)

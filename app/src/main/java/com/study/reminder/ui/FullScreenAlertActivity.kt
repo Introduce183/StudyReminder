@@ -9,6 +9,7 @@ import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.study.reminder.databinding.ActivityFullscreenAlertBinding
+import com.study.reminder.helper.ButtonMotionHelper
 import com.study.reminder.helper.CharacterHelper
 import com.study.reminder.helper.NotificationHelper
 
@@ -70,6 +71,7 @@ class FullScreenAlertActivity : AppCompatActivity() {
         binding.tvEmoji.text = emoji
         binding.ivCharacter.setImageResource(CharacterHelper.getCharacterDrawable())
         binding.tvCharacterName.text = CharacterHelper.getCharacterName()
+        ButtonMotionHelper.attachLiquidPress(binding.btnConfirm)
 
         binding.ivCharacter.translationY = 600f
         binding.ivCharacter.animate().translationY(0f).setDuration(400).start()
