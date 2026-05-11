@@ -21,34 +21,36 @@ class ScreenAccessibilityService : AccessibilityService() {
         private const val COOLDOWN_MS = 5 * 60 * 1000L
     }
 
+    private val launcherPkgs = mutableSetOf<String>()
+
     override fun onServiceConnected() {
         serviceInfo = AccessibilityServiceInfo().apply {
-            // 只监听窗口切换，不读内容，降低性能消耗
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             notificationTimeout = 500
         }
+        cacheLauncherPackages()
+    }
+
+    private fun cacheLauncherPackages() {
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+                addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+            }
+            val resolved = packageManager.queryIntentActivities(intent, 0)
+            launcherPkgs.clear()
+            launcherPkgs.addAll(resolved.map { it.activityInfo.packageName })
+        } catch (_: Exception) {}
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString() ?: return
         if (pkg == lastPackageName) return
         lastPackageName = pkg
-        if (isIgnorablePackage(pkg)) return
+        // 只对有桌面图标的用户应用触发提醒，系统组件/手势栏/桌面本身都不会命中
+        if (pkg !in launcherPkgs) return
+        if (pkg == packageName) return
         checkAndRemind(pkg)
-    }
-
-    private fun isIgnorablePackage(pkg: String): Boolean {
-        return pkg == packageName ||  // 自身
-            pkg == "android" ||       // 系统框架
-            pkg == "com.android.systemui" ||  // 系统UI（手势栏、状态栏、通知栏）
-            pkg.startsWith("com.android.launcher") ||  // 各厂商桌面
-            pkg.startsWith("com.google.android.apps.nexuslauncher") ||  // Pixel桌面
-            pkg.startsWith("com.miui.home") ||  // 小米桌面
-            pkg.startsWith("com.huawei.android.launcher") ||  // 华为桌面
-            pkg.startsWith("com.oppo.launcher") ||  // OPPO桌面
-            pkg.startsWith("com.vivo.launcher") ||  // vivo桌面
-            pkg.startsWith("com.sec.android.app.launcher")  // 三星桌面
     }
 
     private fun checkAndRemind(pkg: String) {
