@@ -34,7 +34,21 @@ class ScreenAccessibilityService : AccessibilityService() {
         val pkg = event?.packageName?.toString() ?: return
         if (pkg == lastPackageName) return
         lastPackageName = pkg
+        if (isIgnorablePackage(pkg)) return
         checkAndRemind(pkg)
+    }
+
+    private fun isIgnorablePackage(pkg: String): Boolean {
+        return pkg == packageName ||  // 自身
+            pkg == "android" ||       // 系统框架
+            pkg == "com.android.systemui" ||  // 系统UI（手势栏、状态栏、通知栏）
+            pkg.startsWith("com.android.launcher") ||  // 各厂商桌面
+            pkg.startsWith("com.google.android.apps.nexuslauncher") ||  // Pixel桌面
+            pkg.startsWith("com.miui.home") ||  // 小米桌面
+            pkg.startsWith("com.huawei.android.launcher") ||  // 华为桌面
+            pkg.startsWith("com.oppo.launcher") ||  // OPPO桌面
+            pkg.startsWith("com.vivo.launcher") ||  // vivo桌面
+            pkg.startsWith("com.sec.android.app.launcher")  // 三星桌面
     }
 
     private fun checkAndRemind(pkg: String) {
