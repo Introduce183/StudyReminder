@@ -92,6 +92,39 @@ object StudyStatsRepository {
             .getLong(PREF_ACTIVE_START, 0L) > 0
     }
 
+    /**
+     * 检查当前是否在某个学习时间段内，返回剩余分钟数（不在任何时间段内返回 0）
+     */
+    fun getActiveSlotRemainingMinutes(context: Context): Int {
+        val slots = SlotRepository.getSlots(context)
+        val cal = Calendar.getInstance()
+        // Calendar: 1=周日, 2=周一 ... 7=周六 → StudySlot: 1=周一 ... 7=周日
+        val dow = when (cal.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> 1
+            Calendar.TUESDAY -> 2
+            Calendar.WEDNESDAY -> 3
+            Calendar.THURSDAY -> 4
+            Calendar.FRIDAY -> 5
+            Calendar.SATURDAY -> 6
+            Calendar.SUNDAY -> 7
+            else -> 0
+        }
+        val nowMin = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+
+        var maxRemaining = 0
+        for (slot in slots) {
+            if (!slot.enabled) continue
+            if (dow !in slot.enableDays) continue
+            val startMin = slot.startHour * 60 + slot.startMinute
+            val endMin = slot.endHour * 60 + slot.endMinute
+            if (nowMin in startMin until endMin) {
+                val remaining = endMin - nowMin
+                if (remaining > maxRemaining) maxRemaining = remaining
+            }
+        }
+        return maxRemaining
+    }
+
     // ── 摸鱼记录（独立于会话，立即保存）─────────────────────────
 
     fun recordDistraction(context: Context) {

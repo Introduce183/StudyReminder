@@ -29,6 +29,7 @@ fun StudyScreen() {
     var monthStats by remember { mutableStateOf(StudyStatsRepository.getMonthStats(context)) }
     var selectedTab by remember { mutableStateOf(0) } // 0=周, 1=月
     var isStudying by remember { mutableStateOf(StudyStatsRepository.hasActiveSession(context)) }
+    var isInSlot by remember { mutableStateOf(StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0) }
     var elapsedSeconds by remember { mutableStateOf(0) }
 
     // 计算已学习秒数（自动刷新）
@@ -52,6 +53,18 @@ fun StudyScreen() {
         weekStats = StudyStatsRepository.getWeekStats(context)
         monthStats = StudyStatsRepository.getMonthStats(context)
         isStudying = StudyStatsRepository.hasActiveSession(context)
+        isInSlot = StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0
+    }
+
+    fun startManualSession() {
+        val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(context).coerceAtLeast(1)
+        StudyStatsRepository.startSession(context, -1L)
+        val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
+            action = TimerService.ACTION_START
+            putExtra(TimerService.EXTRA_DURATION_MINUTES, remaining)
+        }
+        context.startForegroundService(serviceIntent)
+        refresh()
     }
 
     LaunchedEffect(Unit) { refresh() }
@@ -80,7 +93,7 @@ fun StudyScreen() {
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
-            // 学习状态卡片（自动检测）
+            // 学习状态卡片
             GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
                 Column(
                     modifier = Modifier
@@ -104,6 +117,17 @@ fun StudyScreen() {
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF10393F)
+                        )
+                    } else if (isInSlot) {
+                        Text(
+                            text = "当前在学习时间段内",
+                            fontSize = 14.sp,
+                            color = Color(0xFF4E7F84)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LiquidGlassButton(
+                            text = "开始学习",
+                            onClick = { startManualSession() }
                         )
                     } else {
                         Text(

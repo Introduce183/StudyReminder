@@ -35,6 +35,8 @@ import com.study.reminder.helper.NotificationHelper
 import com.study.reminder.helper.SlotScheduler
 import com.study.reminder.model.SlotRepository
 import com.study.reminder.model.StudySlot
+import com.study.reminder.model.StudyStatsRepository
+import com.study.reminder.service.TimerService
 import com.study.reminder.ui.compose.GlassCard
 import com.study.reminder.ui.compose.LiquidGlassButton
 import com.study.reminder.ui.compose.StudySlotItem
@@ -243,7 +245,23 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         refreshSlotList()
         SlotScheduler.rescheduleAll(this)
+        autoRestartSessionIfNeeded()
         maybeShowStartupGuide()
+    }
+
+    /**
+     * 如果当前在学习时间段内但没有活跃会话（app 被杀后恢复），自动重新开始计时
+     */
+    private fun autoRestartSessionIfNeeded() {
+        if (StudyStatsRepository.hasActiveSession(this)) return
+        val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(this)
+        if (remaining <= 0) return
+        StudyStatsRepository.startSession(this, -1L)
+        val serviceIntent = Intent(this, TimerService::class.java).apply {
+            action = TimerService.ACTION_START
+            putExtra(TimerService.EXTRA_DURATION_MINUTES, remaining)
+        }
+        startForegroundService(serviceIntent)
     }
 
     private fun loadSlots() {
