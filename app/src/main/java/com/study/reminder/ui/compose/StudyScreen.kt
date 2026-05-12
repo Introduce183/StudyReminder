@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.model.DayStats
 import com.study.reminder.model.StudyStatsRepository
+import com.study.reminder.service.TimerService
+import kotlinx.coroutines.delay
 
 @Composable
 fun StudyScreen() {
@@ -26,12 +28,31 @@ fun StudyScreen() {
     var weekStats by remember { mutableStateOf(StudyStatsRepository.getWeekStats(context)) }
     var monthStats by remember { mutableStateOf(StudyStatsRepository.getMonthStats(context)) }
     var selectedTab by remember { mutableStateOf(0) } // 0=周, 1=月
+    var isStudying by remember { mutableStateOf(StudyStatsRepository.hasActiveSession(context)) }
+    var elapsedSeconds by remember { mutableStateOf(0) }
+
+    // 计算已学习秒数
+    LaunchedEffect(isStudying) {
+        if (isStudying) {
+            val prefs = context.getSharedPreferences("study_prefs", android.content.Context.MODE_PRIVATE)
+            val startMs = prefs.getLong("active_session_start", 0L)
+            while (isStudying) {
+                elapsedSeconds = ((System.currentTimeMillis() - startMs) / 1000).toInt().coerceAtLeast(0)
+                delay(1000L)
+            }
+        } else {
+            elapsedSeconds = 0
+        }
+    }
 
     // 刷新数据
-    LaunchedEffect(Unit) {
+    fun refresh() {
         weekStats = StudyStatsRepository.getWeekStats(context)
         monthStats = StudyStatsRepository.getMonthStats(context)
+        isStudying = StudyStatsRepository.hasActiveSession(context)
     }
+
+    LaunchedEffect(Unit) { refresh() }
 
     val todayStats = remember(weekStats) { StudyStatsRepository.getTodayStats(context) }
     val weekTotal = remember(weekStats) { weekStats.sumOf { it.totalMinutes } }
@@ -56,6 +77,54 @@ fun StudyScreen() {
                 color = Color(0xFF10393F),
                 modifier = Modifier.padding(bottom = 20.dp)
             )
+
+            // 学习控制卡片
+            GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (isStudying) {
+                        val h = elapsedSeconds / 3600
+                        val m = (elapsedSeconds % 3600) / 60
+                        val s = elapsedSeconds % 60
+                        Text(
+                            text = "学习中...",
+                            fontSize = 14.sp,
+                            color = Color(0xFF4E7F84)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = String.format("%02d:%02d:%02d", h, m, s),
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF39C5BB)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LiquidGlassButton(
+                            text = "结束学习",
+                            onClick = {
+                                StudyStatsRepository.endSession(context)
+                                refresh()
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = "准备好开始学习了吗？",
+                            fontSize = 14.sp,
+                            color = Color(0xFF4E7F84)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LiquidGlassButton(
+                            text = "开始学习",
+                            onClick = {
+                                StudyStatsRepository.startSession(context, -1L)
+                                refresh()
+                            }
+                        )
+                    }
+                }
+            }
 
             // 今日概览卡片
             GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
