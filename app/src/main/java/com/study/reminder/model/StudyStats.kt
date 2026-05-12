@@ -10,15 +10,13 @@ data class StudySession(
     val date: String,        // yyyy-MM-dd
     val startMs: Long,       // 开始时间戳
     val endMs: Long,         // 结束时间戳
-    val durationMin: Int,    // 实际学习分钟数
-    val distractionCount: Int // 摸鱼次数
+    val durationMin: Int     // 实际学习分钟数
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("date", date)
         put("startMs", startMs)
         put("endMs", endMs)
         put("durationMin", durationMin)
-        put("distractionCount", distractionCount)
     }
 
     companion object {
@@ -26,23 +24,92 @@ data class StudySession(
             date = json.getString("date"),
             startMs = json.getLong("startMs"),
             endMs = json.getLong("endMs"),
-            durationMin = json.getInt("durationMin"),
-            distractionCount = json.getInt("distractionCount")
+            durationMin = json.getInt("durationMin")
+        )
+    }
+}
+
+data class DistractionEvent(
+    val date: String,     // yyyy-MM-dd
+    val timestamp: Long   // 时间戳
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("date", date)
+        put("timestamp", timestamp)
+    }
+
+    companion object {
+        fun fromJson(json: JSONObject) = DistractionEvent(
+            date = json.getString("date"),
+            timestamp = json.getLong("timestamp")
         )
     }
 }
 
 object StudyStatsRepository {
 
-    private const val PREF_KEY = "study_sessions"
-    private const val PREF_DISTRACTION = "distraction_count"
+    private const val PREF_SESSIONS = "study_sessions"
+    private const val PREF_DISTRACTIONS = "distraction_events"
     private const val PREF_ACTIVE_START = "active_session_start"
-    private const val PREF_ACTIVE_SLOT = "active_session_slot"
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    fun getSessions(context: Context): List<StudySession> {
+    // ── 会话管理 ──────────────────────────────────────────────
+
+    fun startSession(context: Context, slotId: Long) {
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
-        val json = prefs.getString(PREF_KEY, "[]") ?: "[]"
+        if (prefs.getLong(PREF_ACTIVE_START, 0L) > 0) {
+            endSession(context)
+        }
+        prefs.edit()
+            .putLong(PREF_ACTIVE_START, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun endSession(context: Context) {
+        val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+        val startMs = prefs.getLong(PREF_ACTIVE_START, 0L)
+        if (startMs <= 0L) return
+
+        val endMs = System.currentTimeMillis()
+        val durationMin = ((endMs - startMs) / 60_000).toInt().coerceAtLeast(0)
+
+        // 清除活跃会话标记
+        prefs.edit().remove(PREF_ACTIVE_START).apply()
+
+        if (durationMin < 1) return
+
+        val date = dateFormat.format(Date(startMs))
+        val session = StudySession(date, startMs, endMs, durationMin)
+
+        val sessions = getSessions(context).toMutableList()
+        sessions.add(session)
+        val cutoff = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -90) }.timeInMillis
+        saveSessions(context, sessions.filter { it.endMs > cutoff })
+    }
+
+    fun hasActiveSession(context: Context): Boolean {
+        return context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+            .getLong(PREF_ACTIVE_START, 0L) > 0
+    }
+
+    // ── 摸鱼记录（独立于会话，立即保存）─────────────────────────
+
+    fun recordDistraction(context: Context) {
+        val now = System.currentTimeMillis()
+        val date = dateFormat.format(Date(now))
+        val event = DistractionEvent(date, now)
+
+        val events = getDistractions(context).toMutableList()
+        events.add(event)
+        val cutoff = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -90) }.timeInMillis
+        saveDistractions(context, events.filter { it.timestamp > cutoff })
+    }
+
+    // ── 数据读写 ──────────────────────────────────────────────
+
+    private fun getSessions(context: Context): List<StudySession> {
+        val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+        val json = prefs.getString(PREF_SESSIONS, "[]") ?: "[]"
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { StudySession.fromJson(arr.getJSONObject(it)) }
@@ -53,107 +120,54 @@ object StudyStatsRepository {
         val arr = JSONArray()
         sessions.forEach { arr.put(it.toJson()) }
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
-            .edit().putString(PREF_KEY, arr.toString()).apply()
+            .edit().putString(PREF_SESSIONS, arr.toString()).apply()
     }
 
-    // 开始一次学习
-    fun startSession(context: Context, slotId: Long) {
+    private fun getDistractions(context: Context): List<DistractionEvent> {
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
-        // 如果已有活跃会话，先结束
-        if (prefs.getLong(PREF_ACTIVE_START, 0L) > 0) {
-            endSession(context)
-        }
-        prefs.edit()
-            .putLong(PREF_ACTIVE_START, System.currentTimeMillis())
-            .putLong(PREF_ACTIVE_SLOT, slotId)
-            .putInt(PREF_DISTRACTION, 0)
-            .apply()
+        val json = prefs.getString(PREF_DISTRACTIONS, "[]") ?: "[]"
+        return try {
+            val arr = JSONArray(json)
+            (0 until arr.length()).map { DistractionEvent.fromJson(arr.getJSONObject(it)) }
+        } catch (_: Exception) { emptyList() }
     }
 
-    // 记录一次摸鱼
-    fun recordDistraction(context: Context) {
-        val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
-        val current = prefs.getInt(PREF_DISTRACTION, 0)
-        prefs.edit().putInt(PREF_DISTRACTION, current + 1).apply()
+    private fun saveDistractions(context: Context, events: List<DistractionEvent>) {
+        val arr = JSONArray()
+        events.forEach { arr.put(it.toJson()) }
+        context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+            .edit().putString(PREF_DISTRACTIONS, arr.toString()).apply()
     }
 
-    // 结束当前学习
-    fun endSession(context: Context) {
-        val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
-        val startMs = prefs.getLong(PREF_ACTIVE_START, 0L)
-        if (startMs <= 0L) return
+    // ── 统计查询 ──────────────────────────────────────────────
 
-        val endMs = System.currentTimeMillis()
-        val durationMin = ((endMs - startMs) / 60_000).toInt().coerceAtLeast(0)
-        if (durationMin < 1) {
-            // 不足1分钟，不记录
-            prefs.edit().remove(PREF_ACTIVE_START).remove(PREF_ACTIVE_SLOT).remove(PREF_DISTRACTION).apply()
-            return
-        }
-
-        val distraction = prefs.getInt(PREF_DISTRACTION, 0)
-        val date = dateFormat.format(Date(startMs))
-
-        val session = StudySession(
-            date = date,
-            startMs = startMs,
-            endMs = endMs,
-            durationMin = durationMin,
-            distractionCount = distraction
-        )
-
-        val sessions = getSessions(context).toMutableList()
-        sessions.add(session)
-        // 只保留最近90天
-        val cutoff = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -90) }.timeInMillis
-        val filtered = sessions.filter { it.endMs > cutoff }
-        saveSessions(context, filtered)
-
-        prefs.edit().remove(PREF_ACTIVE_START).remove(PREF_ACTIVE_SLOT).remove(PREF_DISTRACTION).apply()
-    }
-
-    // 是否有活跃会话
-    fun hasActiveSession(context: Context): Boolean {
-        return context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
-            .getLong(PREF_ACTIVE_START, 0L) > 0
-    }
-
-    // 获取今日统计
     fun getTodayStats(context: Context): DayStats {
         val today = dateFormat.format(Date())
         val sessions = getSessions(context).filter { it.date == today }
-        return aggregate(sessions)
+        val distractions = getDistractions(context).count { it.date == today }
+        return DayStats(today, "今日", sessions.sumOf { it.durationMin }, distractions, sessions.size)
     }
 
-    // 获取本周统计（按天）
     fun getWeekStats(context: Context): List<DayStats> {
         val cal = Calendar.getInstance()
-        // 回到本周一
         while (cal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
             cal.add(Calendar.DAY_OF_YEAR, -1)
         }
-        val monday = dateFormat.format(cal.time)
-
         val sessions = getSessions(context)
-        val result = mutableListOf<DayStats>()
+        val distractions = getDistractions(context)
         val dayNames = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+        val result = mutableListOf<DayStats>()
 
         for (i in 0 until 7) {
             val date = dateFormat.format(cal.time)
             val daySessions = sessions.filter { it.date == date }
-            result.add(DayStats(
-                date = date,
-                label = dayNames[i],
-                totalMinutes = daySessions.sumOf { it.durationMin },
-                distractionCount = daySessions.sumOf { it.distractionCount },
-                sessionCount = daySessions.size
-            ))
+            val dayDistractions = distractions.count { it.date == date }
+            result.add(DayStats(date, dayNames[i], daySessions.sumOf { it.durationMin }, dayDistractions, daySessions.size))
             cal.add(Calendar.DAY_OF_YEAR, 1)
         }
         return result
     }
 
-    // 获取本月统计（按天）
     fun getMonthStats(context: Context): List<DayStats> {
         val cal = Calendar.getInstance()
         val year = cal.get(Calendar.YEAR)
@@ -161,6 +175,7 @@ object StudyStatsRepository {
         cal.set(year, month, 1)
 
         val sessions = getSessions(context)
+        val distractions = getDistractions(context)
         val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
         val result = mutableListOf<DayStats>()
 
@@ -168,25 +183,10 @@ object StudyStatsRepository {
             cal.set(Calendar.DAY_OF_MONTH, day)
             val date = dateFormat.format(cal.time)
             val daySessions = sessions.filter { it.date == date }
-            result.add(DayStats(
-                date = date,
-                label = "$day",
-                totalMinutes = daySessions.sumOf { it.durationMin },
-                distractionCount = daySessions.sumOf { it.distractionCount },
-                sessionCount = daySessions.size
-            ))
+            val dayDistractions = distractions.count { it.date == date }
+            result.add(DayStats(date, "$day", daySessions.sumOf { it.durationMin }, dayDistractions, daySessions.size))
         }
         return result
-    }
-
-    private fun aggregate(sessions: List<StudySession>): DayStats {
-        return DayStats(
-            date = sessions.firstOrNull()?.date ?: "",
-            label = "今日",
-            totalMinutes = sessions.sumOf { it.durationMin },
-            distractionCount = sessions.sumOf { it.distractionCount },
-            sessionCount = sessions.size
-        )
     }
 }
 
