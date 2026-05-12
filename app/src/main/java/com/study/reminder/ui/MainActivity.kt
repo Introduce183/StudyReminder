@@ -39,6 +39,7 @@ import com.study.reminder.ui.compose.GlassCard
 import com.study.reminder.ui.compose.LiquidGlassButton
 import com.study.reminder.ui.compose.StudySlotItem
 import com.study.reminder.ui.compose.StudyReminderComposeTheme
+import com.study.reminder.ui.compose.StudyScreen
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
@@ -104,6 +105,48 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             StudyReminderComposeTheme {
+                var selectedTab by remember { mutableStateOf(0) }
+
+                Scaffold(
+                    bottomBar = {
+                        NavigationBar(
+                            containerColor = Color(0xCCF7FFFF),
+                            contentColor = Color(0xFF10393F)
+                        ) {
+                            NavigationBarItem(
+                                selected = selectedTab == 0,
+                                onClick = { selectedTab = 0 },
+                                icon = { Text("📊") },
+                                label = { Text("学习") },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color(0xFF39C5BB),
+                                    selectedTextColor = Color(0xFF39C5BB),
+                                    indicatorColor = Color(0x3339C5BB),
+                                    unselectedIconColor = Color(0xFF4E7F84),
+                                    unselectedTextColor = Color(0xFF4E7F84)
+                                )
+                            )
+                            NavigationBarItem(
+                                selected = selectedTab == 1,
+                                onClick = { selectedTab = 1 },
+                                icon = { Text("⚙️") },
+                                label = { Text("设置") },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color(0xFF39C5BB),
+                                    selectedTextColor = Color(0xFF39C5BB),
+                                    indicatorColor = Color(0x3339C5BB),
+                                    unselectedIconColor = Color(0xFF4E7F84),
+                                    unselectedTextColor = Color(0xFF4E7F84)
+                                )
+                            )
+                        }
+                    }
+                ) { paddingValues ->
+                    val activity = this@MainActivity
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        if (selectedTab == 0) {
+                            StudyScreen()
+                        } else {
                 MainScreen(
                     slots = slotsState,
                     notificationEnabled = notificationState.value,
@@ -112,28 +155,28 @@ class MainActivity : ComponentActivity() {
                     fullScreenEnabled = fullScreenState.value,
                     forceHomeEnabled = forceHomeState.value,
                     onAddSlot = {
-                        addSlotLauncher.launch(Intent(this, AddSlotActivity::class.java))
+                        addSlotLauncher.launch(Intent(activity, AddSlotActivity::class.java))
                     },
                     onToggleSlot = { slot ->
-                        SlotRepository.toggleSlot(this, slot.id)
-                        SlotScheduler.rescheduleAll(this)
+                        SlotRepository.toggleSlot(activity, slot.id)
+                        SlotScheduler.rescheduleAll(activity)
                         refreshSlotList()
                     },
                     onDeleteSlot = { slot ->
                         val slotName = slot.label.ifEmpty { "${slot.startLabel} - ${slot.endLabel}" }
-                        AlertDialog.Builder(this)
+                        AlertDialog.Builder(activity)
                             .setTitle("删除时间段")
                             .setMessage("确定删除「$slotName」吗？")
                             .setPositiveButton("删除") { _, _ ->
-                                SlotRepository.removeSlot(this, slot.id)
-                                SlotScheduler.rescheduleAll(this)
+                                SlotRepository.removeSlot(activity, slot.id)
+                                SlotScheduler.rescheduleAll(activity)
                                 refreshSlotList()
                             }
                             .setNegativeButton("取消", null)
                             .show()
                     },
                     onEditSlot = { slot ->
-                        val intent = Intent(this, AddSlotActivity::class.java)
+                        val intent = Intent(activity, AddSlotActivity::class.java)
                         intent.putExtra(AddSlotActivity.EXTRA_SLOT_JSON, slot.toJson().toString())
                         editSlotLauncher.launch(intent)
                     },
@@ -174,7 +217,7 @@ class MainActivity : ComponentActivity() {
                         saveOptions()
                     },
                     onWhitelist = {
-                        startActivity(Intent(this, AppPickerActivity::class.java))
+                        startActivity(Intent(activity, AppPickerActivity::class.java))
                     },
                     onAccessibilityGuide = {
                         showGuideSheet(
@@ -187,6 +230,9 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 )
+                        }
+                    }
+                }
             }
         }
 

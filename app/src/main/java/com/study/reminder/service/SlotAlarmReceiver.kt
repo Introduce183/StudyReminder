@@ -6,6 +6,7 @@ import android.content.Intent
 import android.app.AlarmManager
 import com.study.reminder.helper.SlotScheduler
 import com.study.reminder.model.SlotRepository
+import com.study.reminder.model.StudyStatsRepository
 
 /**
  * 时间段闹钟触发时的广播接收器
@@ -30,6 +31,9 @@ class SlotAlarmReceiver : BroadcastReceiver() {
         val durationMinutes = (slot.endHour * 60 + slot.endMinute) -
                               (slot.startHour * 60 + slot.startMinute)
         if (durationMinutes <= 0) return
+
+        // 开始记录学习会话
+        StudyStatsRepository.startSession(context, slotId)
 
         // 读取提醒设置
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)

@@ -2,11 +2,13 @@ package com.study.reminder.helper
 
 import android.content.Context
 import android.content.Intent
+import com.study.reminder.model.StudyStatsRepository
 import com.study.reminder.service.OverlayService
 
 object ReminderDispatcher {
 
     fun dispatchFromPreferences(context: Context, message: String, emoji: String) {
+        StudyStatsRepository.recordDistraction(context)
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
         dispatch(
             context = context,

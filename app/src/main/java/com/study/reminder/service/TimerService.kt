@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData
 import com.study.reminder.helper.NotificationHelper
 import com.study.reminder.helper.ReminderDispatcher
 import com.study.reminder.helper.TauntHelper
+import com.study.reminder.model.StudyStatsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -110,6 +111,7 @@ class TimerService : Service() {
 
     private suspend fun onTimerFinished(prefs: android.content.SharedPreferences) {
         timerRunningLive.postValue(false)
+        StudyStatsRepository.endSession(this)
         val (message, emoji) = TauntHelper.random()
 
         withContext(Dispatchers.Main) {
@@ -140,6 +142,7 @@ class TimerService : Service() {
     private fun stopTimer() {
         timerJob?.cancel()
         timerRunningLive.postValue(false)
+        StudyStatsRepository.endSession(this)
         NotificationHelper.cancelForeground(this)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
