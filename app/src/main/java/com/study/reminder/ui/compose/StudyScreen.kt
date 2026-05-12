@@ -31,12 +31,14 @@ fun StudyScreen() {
     var isStudying by remember { mutableStateOf(StudyStatsRepository.hasActiveSession(context)) }
     var elapsedSeconds by remember { mutableStateOf(0) }
 
-    // 计算已学习秒数
+    // 计算已学习秒数（自动刷新）
     LaunchedEffect(isStudying) {
         if (isStudying) {
             val prefs = context.getSharedPreferences("study_prefs", android.content.Context.MODE_PRIVATE)
             val startMs = prefs.getLong("active_session_start", 0L)
-            while (isStudying) {
+            while (true) {
+                isStudying = StudyStatsRepository.hasActiveSession(context)
+                if (!isStudying) break
                 elapsedSeconds = ((System.currentTimeMillis() - startMs) / 1000).toInt().coerceAtLeast(0)
                 delay(1000L)
             }
@@ -78,10 +80,12 @@ fun StudyScreen() {
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
-            // 学习控制卡片
+            // 学习状态卡片（自动检测）
             GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (isStudying) {
@@ -89,38 +93,23 @@ fun StudyScreen() {
                         val m = (elapsedSeconds % 3600) / 60
                         val s = elapsedSeconds % 60
                         Text(
-                            text = "学习中...",
+                            text = "🟢 学习中",
                             fontSize = 14.sp,
-                            color = Color(0xFF4E7F84)
+                            color = Color(0xFF39C5BB),
+                            fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = String.format("%02d:%02d:%02d", h, m, s),
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF39C5BB)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LiquidGlassButton(
-                            text = "结束学习",
-                            onClick = {
-                                StudyStatsRepository.endSession(context)
-                                refresh()
-                            }
+                            color = Color(0xFF10393F)
                         )
                     } else {
                         Text(
-                            text = "准备好开始学习了吗？",
+                            text = "当前不在学习时间段",
                             fontSize = 14.sp,
                             color = Color(0xFF4E7F84)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LiquidGlassButton(
-                            text = "开始学习",
-                            onClick = {
-                                StudyStatsRepository.startSession(context, -1L)
-                                refresh()
-                            }
                         )
                     }
                 }
