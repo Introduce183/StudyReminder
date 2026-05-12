@@ -4,6 +4,10 @@
 
 本项目由我与 AI 协作完成开发与整理，包括代码实现、问题修复、文档整理与 GitHub 发布流程。
 
+## 下载
+
+> **[点此前往 GitHub Releases 下载最新 APK](https://github.com/Introduce183/StudyReminder/releases/latest)**
+
 ## 项目特点
 
 - 支持按星期配置固定学习时间段
@@ -14,32 +18,10 @@
 - 可选开启无障碍服务，用于检测学习中途切到分心应用
 - 学习时间开始后会启动前台计时服务
 
-## 界面截图
-
-主界面：
-
-<img src="main_ui.jpg" alt="主界面" width="360" />
-
-白名单设置：
-
-<img src="whitelist_ui.jpg" alt="白名单界面" width="360" />
-
-## APK 下载
-
-当前仓库内提供了一个可直接下载的调试版 APK：
-
-- [下载 StudyReminder-debug.apk](apk/StudyReminder-debug.apk)
-
-说明：
-
-- 这是 `debug` 构建，适合体验和测试
-- 首次安装时，Android 可能会提示“未知来源安装”
-- 如果后续需要正式对外发布，建议再单独生成已签名的正式安装包
-
 ## 开发信息
 
 - 开发语言：Kotlin
-- UI 方式：Android View + ViewBinding
+- UI 方式：Jetpack Compose + Android View（悬浮窗部分）
 - `compileSdk`：34
 - `minSdk`：29
 - `targetSdk`：34
