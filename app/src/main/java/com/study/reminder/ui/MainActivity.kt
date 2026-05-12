@@ -346,7 +346,7 @@ class MainActivity : ComponentActivity() {
                 title = "还建议打开后台弹出和自启动",
                 message = "全屏弹出和强制回桌面已经基于悬浮窗实现，但在部分机型上，仍建议额外允许后台弹出界面、自启动和电池白名单，以提高稳定性。",
                 primaryText = "去设置",
-                secondaryText = "??",
+                secondaryText = "跳过",
                 onDismiss = {
                     prefs.edit().putBoolean(KEY_FULLSCREEN_BACKGROUND_GUIDE_SHOWN, true).apply()
                 }
@@ -364,7 +364,7 @@ class MainActivity : ComponentActivity() {
             title = "需要悬浮窗和后台弹出权限",
             message = "全屏弹出和强制回桌面依赖悬浮窗权限，部分机型还需要手动允许后台弹出界面。点击继续后会带你去设置。",
             primaryText = "去设置",
-            secondaryText = "??"
+            secondaryText = "跳过"
         ) {
             overlayPermissionLauncher.launch(
                 Intent(
@@ -464,11 +464,23 @@ class MainActivity : ComponentActivity() {
             }
         )
 
-        val intent = intents.firstOrNull { candidate ->
-            candidate.resolveActivity(packageManager) != null
-        } ?: return
+        for (intent in intents) {
+            try {
+                if (intent.resolveActivity(packageManager) != null) {
+                    startActivity(intent)
+                    return
+                }
+            } catch (_: Exception) {}
+        }
 
-        startActivity(intent)
+        // 兜底：直接打开本应用的系统设置页
+        try {
+            startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+            )
+        } catch (_: Exception) {}
     }
 }
 
