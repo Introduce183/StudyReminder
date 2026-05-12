@@ -57,13 +57,24 @@ fun StudyScreen() {
     }
 
     fun startManualSession() {
-        val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(context).coerceAtLeast(1)
+        val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(context)
+        val duration = if (remaining > 0) remaining else 24 * 60 // 不在时间段内默认24小时
         StudyStatsRepository.startSession(context, -1L)
         val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
             action = TimerService.ACTION_START
-            putExtra(TimerService.EXTRA_DURATION_MINUTES, remaining)
+            putExtra(TimerService.EXTRA_DURATION_MINUTES, duration)
         }
         context.startForegroundService(serviceIntent)
+        refresh()
+    }
+
+    fun endStudySession() {
+        StudyStatsRepository.endSession(context)
+        // 停止 TimerService
+        val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
+            action = TimerService.ACTION_STOP
+        }
+        context.startService(serviceIntent)
         refresh()
     }
 
@@ -118,9 +129,15 @@ fun StudyScreen() {
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF10393F)
                         )
-                    } else if (isInSlot) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LiquidGlassButton(
+                            text = "结束学习",
+                            primary = false,
+                            onClick = { endStudySession() }
+                        )
+                    } else {
                         Text(
-                            text = "当前在学习时间段内",
+                            text = if (isInSlot) "当前在学习时间段内" else "当前不在学习时间段",
                             fontSize = 14.sp,
                             color = Color(0xFF4E7F84)
                         )
@@ -128,12 +145,6 @@ fun StudyScreen() {
                         LiquidGlassButton(
                             text = "开始学习",
                             onClick = { startManualSession() }
-                        )
-                    } else {
-                        Text(
-                            text = "当前不在学习时间段",
-                            fontSize = 14.sp,
-                            color = Color(0xFF4E7F84)
                         )
                     }
                 }

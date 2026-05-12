@@ -6,6 +6,7 @@ import com.study.reminder.helper.ReminderDispatcher
 import android.view.accessibility.AccessibilityEvent
 import com.study.reminder.helper.WhitelistManager
 import com.study.reminder.model.SlotRepository
+import com.study.reminder.model.StudyStatsRepository
 import java.util.Calendar
 
 /**
@@ -61,6 +62,19 @@ class ScreenAccessibilityService : AccessibilityService() {
 
         lastReminderPkg = pkg
         lastReminderTime = now
+
+        // 监督触发时自动开始学习计时（如果尚未开始）
+        if (!StudyStatsRepository.hasActiveSession(this)) {
+            StudyStatsRepository.startSession(this, -1L)
+            val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(this)
+            if (remaining > 0) {
+                val serviceIntent = android.content.Intent(this, com.study.reminder.service.TimerService::class.java).apply {
+                    action = TimerService.ACTION_START
+                    putExtra(TimerService.EXTRA_DURATION_MINUTES, remaining)
+                }
+                startForegroundService(serviceIntent)
+            }
+        }
 
         val (message, emoji) = com.study.reminder.helper.TauntHelper.random()
         ReminderDispatcher.dispatchFromPreferences(this, message, emoji)
