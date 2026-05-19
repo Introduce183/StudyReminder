@@ -163,6 +163,14 @@ class MainActivity : ComponentActivity() {
                         SlotRepository.toggleSlot(activity, slot.id)
                         SlotScheduler.rescheduleAll(activity)
                         refreshSlotList()
+                        // 关闭时间段时，自动结束当前学习会话
+                        if (slot.enabled && StudyStatsRepository.hasActiveSession(activity)) {
+                            StudyStatsRepository.endSession(activity)
+                            val stopIntent = Intent(activity, TimerService::class.java).apply {
+                                action = TimerService.ACTION_STOP
+                            }
+                            activity.startService(stopIntent)
+                        }
                     },
                     onDeleteSlot = { slot ->
                         val slotName = slot.label.ifEmpty { "${slot.startLabel} - ${slot.endLabel}" }
