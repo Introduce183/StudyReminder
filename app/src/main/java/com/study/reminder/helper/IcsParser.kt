@@ -51,11 +51,13 @@ object IcsParser {
             for (ev in evts) {
                 allExDates.addAll(ev.exDates)
                 if (ev.untilDate.isNotEmpty()) {
-                    weekRanges.add(listOf(ev.startDate, ev.untilDate))
+                    // UNTIL is the date of the last occurrence (Monday of last week)
+                    // Extend by 6 days to cover the full final week (Mon-Sun)
+                    weekRanges.add(listOf(ev.startDate, addDays(ev.untilDate, 6)))
                 } else {
-                    // No UNTIL = runs until end of semester
-                    // Use a far-future date
-                    weekRanges.add(listOf(ev.startDate, "2099-12-31"))
+                    // No UNTIL = default to 20 weeks from start
+                    val endDate = addWeeks(ev.startDate, 20)
+                    weekRanges.add(listOf(ev.startDate, endDate))
                 }
             }
 
@@ -80,8 +82,8 @@ object IcsParser {
             )
         }
 
-        // Deduplicate: (courseName, dayOfWeek, startHour, startMinute) same -> keep one
-        val deduped = courses.distinctBy { "${it.courseName}_${it.dayOfWeek}_${it.startHour}_${it.startMinute}" }
+        // Deduplicate: (courseName, dayOfWeek, startHour, startMinute, endHour, endMinute) same -> keep one
+        val deduped = courses.distinctBy { "${it.courseName}_${it.dayOfWeek}_${it.startHour}_${it.startMinute}_${it.endHour}_${it.endMinute}" }
 
         // Semester start = earliest DTSTART
         val semesterStart = allStartDates.minOrNull() ?: ""
@@ -289,8 +291,8 @@ object IcsParser {
         for (i in 1 until sorted.size) {
             val last = merged.last()
             val curr = sorted[i]
-            // If ranges overlap or are adjacent (gap <= 7 days), merge
-            if (curr[0] <= addDays(last[1], 7)) {
+            // If ranges overlap or are adjacent (gap <= 1 day), merge
+            if (curr[0] <= addDays(last[1], 1)) {
                 val newEnd = if (curr[1] > last[1]) curr[1] else last[1]
                 merged[merged.lastIndex] = listOf(last[0], newEnd)
             } else {
@@ -299,6 +301,8 @@ object IcsParser {
         }
         return merged
     }
+
+    private fun addWeeks(dateStr: String, weeks: Int): String = addDays(dateStr, weeks * 7)
 
     private fun addDays(dateStr: String, days: Int): String {
         return try {

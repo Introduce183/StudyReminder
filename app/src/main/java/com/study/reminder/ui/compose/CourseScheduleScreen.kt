@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -194,24 +195,30 @@ private fun WeekSelector(
     onSelectWeek: (Int) -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val buttonWidth = 40.dp
+    val spacing = 6.dp
+    val density = LocalDensity.current
 
-    // Auto-scroll to current week
+    // Center the selected week in the scrollable area
     LaunchedEffect(currentWeek) {
-        val targetScroll = ((currentWeek - 1) * 48 - 150).coerceAtLeast(0)
-        scrollState.scrollTo(targetScroll)
+        val buttonWidthPx = with(density) { buttonWidth.toPx() }
+        val spacingPx = with(density) { spacing.toPx() }
+        val containerWidthPx = with(density) { 300.dp.toPx() } // approximate visible width
+        val targetPx = (currentWeek - 1) * (buttonWidthPx + spacingPx) - containerWidthPx / 2 + buttonWidthPx / 2
+        scrollState.scrollTo(targetPx.toInt().coerceAtLeast(0))
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(scrollState),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(spacing)
     ) {
         for (week in 1..totalWeeks) {
             val isSelected = week == currentWeek
             Box(
                 modifier = Modifier
-                    .size(width = 40.dp, height = 36.dp)
+                    .size(width = buttonWidth, height = 36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(
                         if (isSelected) Color(0xFF39C5BB) else Color(0x15000000)
