@@ -122,6 +122,15 @@ object StudyStatsRepository {
                 if (remaining > maxRemaining) maxRemaining = remaining
             }
         }
+
+        // 检查课表
+        val activeCourses = CourseScheduleRepository.getActiveCoursesNow(context)
+        for (course in activeCourses) {
+            val endMin = course.endHour * 60 + course.endMinute
+            val remaining = endMin - nowMin
+            if (remaining > maxRemaining) maxRemaining = remaining
+        }
+
         return maxRemaining
     }
 

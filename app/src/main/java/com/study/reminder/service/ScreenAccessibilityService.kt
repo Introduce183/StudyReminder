@@ -5,6 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import com.study.reminder.helper.ReminderDispatcher
 import android.view.accessibility.AccessibilityEvent
 import com.study.reminder.helper.WhitelistManager
+import com.study.reminder.model.CourseScheduleRepository
 import com.study.reminder.model.SlotRepository
 import com.study.reminder.model.StudyStatsRepository
 import java.util.Calendar
@@ -86,13 +87,18 @@ class ScreenAccessibilityService : AccessibilityService() {
         val dow = now.get(Calendar.DAY_OF_WEEK)
         val adjustedDow = if (dow == Calendar.SUNDAY) 7 else dow - 1
 
-        return SlotRepository.getSlots(this).any { slot ->
+        // 检查手动时间段
+        val inManualSlot = SlotRepository.getSlots(this).any { slot ->
             if (!slot.enabled) return@any false
             if (adjustedDow !in slot.enableDays) return@any false
             val startMin = slot.startHour * 60 + slot.startMinute
             val endMin = slot.endHour * 60 + slot.endMinute
             nowMinutes in startMin until endMin
         }
+        if (inManualSlot) return true
+
+        // 检查课表
+        return CourseScheduleRepository.getActiveCoursesNow(this).isNotEmpty()
     }
 
     override fun onInterrupt() {}

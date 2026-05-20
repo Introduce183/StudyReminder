@@ -70,6 +70,12 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".service.CourseAlarmReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.study.reminder.COURSE_TRIGGER" />
+            </intent-filter>
+        </receiver>
+
         <receiver android:name=".service.BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -31,18 +31,24 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.study.reminder.R
+import com.study.reminder.helper.CourseScheduler
+import com.study.reminder.helper.IcsParser
 import com.study.reminder.helper.NotificationHelper
 import com.study.reminder.helper.SlotScheduler
+import com.study.reminder.model.CourseSchedule
+import com.study.reminder.model.CourseScheduleRepository
 import com.study.reminder.model.SlotRepository
 import com.study.reminder.model.StudySlot
 import com.study.reminder.model.StudyStatsRepository
 import com.study.reminder.service.TimerService
+import com.study.reminder.ui.compose.CourseScheduleScreen
 import com.study.reminder.ui.compose.GlassCard
 import com.study.reminder.ui.compose.LiquidGlassButton
 import com.study.reminder.ui.compose.StudySlotItem
 import com.study.reminder.ui.compose.StudyReminderComposeTheme
 import com.study.reminder.ui.compose.StudyScreen
 import org.json.JSONObject
+import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
 
@@ -62,6 +68,17 @@ class MainActivity : ComponentActivity() {
     private val smallWindowState = mutableStateOf(false)
     private val fullScreenState = mutableStateOf(false)
     private val forceHomeState = mutableStateOf(false)
+
+    // Course schedule state
+    private val coursesState = mutableStateListOf<CourseSchedule>()
+    private val semesterStartDateState = mutableStateOf("")
+
+    private val icsPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri ?: return@registerForActivityResult
+        importIcsFile(uri)
+    }
 
     private val overlayPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -104,6 +121,7 @@ class MainActivity : ComponentActivity() {
         // Load initial data
         loadSlots()
         loadOptions()
+        loadCourses()
 
         setContent {
             StudyReminderComposeTheme {
@@ -131,6 +149,19 @@ class MainActivity : ComponentActivity() {
                             NavigationBarItem(
                                 selected = selectedTab == 1,
                                 onClick = { selectedTab = 1 },
+                                icon = { Text("📅") },
+                                label = { Text("课表") },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color(0xFF39C5BB),
+                                    selectedTextColor = Color(0xFF39C5BB),
+                                    indicatorColor = Color(0x3339C5BB),
+                                    unselectedIconColor = Color(0xFF4E7F84),
+                                    unselectedTextColor = Color(0xFF4E7F84)
+                                )
+                            )
+                            NavigationBarItem(
+                                selected = selectedTab == 2,
+                                onClick = { selectedTab = 2 },
                                 icon = { Text("⚙️") },
                                 label = { Text("设置") },
                                 colors = NavigationBarItemDefaults.colors(
@@ -146,10 +177,29 @@ class MainActivity : ComponentActivity() {
                 ) { paddingValues ->
                     val activity = this@MainActivity
                     Box(modifier = Modifier.padding(paddingValues)) {
-                        if (selectedTab == 0) {
-                            StudyScreen()
-                        } else {
-                MainScreen(
+                        when (selectedTab) {
+                            0 -> StudyScreen()
+                            1 -> CourseScheduleScreen(
+                                courses = coursesState,
+                                semesterStartDate = semesterStartDateState.value,
+                                onImportIcs = { icsPickerLauncher.launch(arrayOf("text/calendar")) },
+                                onToggleCourse = { course ->
+                                    CourseScheduleRepository.toggleCourse(activity, course.id)
+                                    CourseScheduler.rescheduleAll(activity)
+                                    refreshCourseList()
+                                },
+                                onDeleteCourse = { course ->
+                                    CourseScheduleRepository.removeCourse(activity, course.id)
+                                    CourseScheduler.rescheduleAll(activity)
+                                    refreshCourseList()
+                                },
+                                onDeleteAll = {
+                                    CourseScheduleRepository.replaceAllCourses(activity, emptyList())
+                                    CourseScheduler.rescheduleAll(activity)
+                                    refreshCourseList()
+                                }
+                            )
+                            else -> MainScreen(
                     slots = slotsState,
                     notificationEnabled = notificationState.value,
                     islandEnabled = islandState.value,
@@ -253,6 +303,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         refreshSlotList()
         SlotScheduler.rescheduleAll(this)
+        refreshCourseList()
+        CourseScheduler.rescheduleAll(this)
         maybeShowStartupGuide()
     }
 
@@ -265,6 +317,66 @@ class MainActivity : ComponentActivity() {
         val slots = SlotRepository.getSlots(this)
         slotsState.clear()
         slotsState.addAll(slots)
+    }
+
+    private fun loadCourses() {
+        coursesState.clear()
+        coursesState.addAll(CourseScheduleRepository.getCourses(this))
+        semesterStartDateState.value = CourseScheduleRepository.getSemesterStartDate(this)
+    }
+
+    private fun refreshCourseList() {
+        val courses = CourseScheduleRepository.getCourses(this)
+        coursesState.clear()
+        coursesState.addAll(courses)
+        semesterStartDateState.value = CourseScheduleRepository.getSemesterStartDate(this)
+    }
+
+    private fun importIcsFile(uri: Uri) {
+        try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return
+            val text = inputStream.bufferedReader().use { it.readText() }
+            if (text.isBlank()) {
+                Toast.makeText(this, "文件为空", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val result = IcsParser.parseIcs(text)
+            if (result.courses.isEmpty()) {
+                Toast.makeText(this, "未解析到课程，请检查 .ics 文件格式", Toast.LENGTH_LONG).show()
+                return
+            }
+
+            // 弹出日期选择器让用户选择学期起始日
+            val cal = Calendar.getInstance()
+            android.app.DatePickerDialog(
+                this,
+                { _, year, month, dayOfMonth ->
+                    val startDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
+                    CourseScheduleRepository.replaceAllCourses(this, result.courses)
+                    CourseScheduleRepository.setSemesterStartDate(this, startDate)
+                    refreshCourseList()
+                    CourseScheduler.rescheduleAll(this)
+                    refreshCourseList()
+
+                    val msg = buildString {
+                        append("已导入 ${result.courses.size} 个课程")
+                        if (result.warnings.isNotEmpty()) {
+                            append("\n注意: ${result.warnings.joinToString("; ")}")
+                        }
+                    }
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+            ).apply {
+                setTitle("选择学期起始日（第一周周一）")
+                show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "导入失败: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun loadOptions() {
