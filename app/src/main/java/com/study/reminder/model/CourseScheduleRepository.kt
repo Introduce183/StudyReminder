@@ -57,6 +57,11 @@ object CourseScheduleRepository {
         saveCourses(context, getCourses(context).filter { it.id != id })
     }
 
+    fun toggleAllCourses(context: Context, enabled: Boolean) {
+        val courses = getCourses(context).map { it.copy(enabled = enabled) }
+        saveCourses(context, courses)
+    }
+
     // ── 学期起始日 ──────────────────────────────────────────
 
     fun getSemesterStartDate(context: Context): String {

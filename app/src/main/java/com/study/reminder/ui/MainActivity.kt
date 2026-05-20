@@ -183,13 +183,8 @@ class MainActivity : ComponentActivity() {
                                 courses = coursesState,
                                 semesterStartDate = semesterStartDateState.value,
                                 onImportIcs = { icsPickerLauncher.launch(arrayOf("text/calendar")) },
-                                onToggleCourse = { course ->
-                                    CourseScheduleRepository.toggleCourse(activity, course.id)
-                                    CourseScheduler.rescheduleAll(activity)
-                                    refreshCourseList()
-                                },
-                                onDeleteCourse = { course ->
-                                    CourseScheduleRepository.removeCourse(activity, course.id)
+                                onToggleAll = { enabled ->
+                                    CourseScheduleRepository.toggleAllCourses(activity, enabled)
                                     CourseScheduler.rescheduleAll(activity)
                                     refreshCourseList()
                                 },

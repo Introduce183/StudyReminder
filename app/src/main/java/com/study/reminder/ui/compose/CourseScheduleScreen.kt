@@ -2,6 +2,7 @@ package com.study.reminder.ui.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,8 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.model.CourseSchedule
 import com.study.reminder.model.CourseScheduleRepository
+import java.text.SimpleDateFormat
+import java.util.*
 
-// 课程颜色池
 private val courseColors = listOf(
     Color(0xFF39C5BB), Color(0xFFFF77B7), Color(0xFF6C9CFF),
     Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF5DADE2),
@@ -34,19 +36,25 @@ private fun courseColor(name: String): Color {
     return courseColors[idx]
 }
 
-private val dayLabels = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
-
 @Composable
 fun CourseScheduleScreen(
     courses: List<CourseSchedule>,
     semesterStartDate: String,
     onImportIcs: () -> Unit,
-    onToggleCourse: (CourseSchedule) -> Unit,
-    onDeleteCourse: (CourseSchedule) -> Unit,
+    onToggleAll: (Boolean) -> Unit,
     onDeleteAll: () -> Unit
 ) {
     val context = LocalContext.current
     val weekNum = remember(semesterStartDate) { CourseScheduleRepository.getSemesterWeekNumber(context) }
+    val allEnabled = courses.isNotEmpty() && courses.all { it.enabled }
+
+    // Calculate total weeks from semester start or course data
+    val totalWeeks = remember(courses, semesterStartDate) {
+        calculateTotalWeeks(courses, semesterStartDate)
+    }
+
+    // Current display week (default to current semester week, or 1)
+    var displayWeek by remember { mutableIntStateOf(if (weekNum > 0) weekNum else 1) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -58,7 +66,7 @@ fun CourseScheduleScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // 标题
+            // Title
             Text(
                 text = "📅 课表模式",
                 fontSize = 28.sp,
@@ -67,17 +75,35 @@ fun CourseScheduleScreen(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // 学期信息
-            if (semesterStartDate.isNotEmpty() && weekNum > 0) {
-                Text(
-                    text = "第${weekNum}周",
-                    fontSize = 14.sp,
-                    color = Color(0xFF4E7F84),
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+            // Semester info + master toggle
+            if (courses.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = if (weekNum > 0) "当前第${weekNum}周" else "课表已导入",
+                        fontSize = 14.sp,
+                        color = Color(0xFF4E7F84)
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "监督开关",
+                            fontSize = 14.sp,
+                            color = Color(0xFF4E7F84)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = allEnabled,
+                            onCheckedChange = { onToggleAll(it) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // 操作按钮
+            // Action buttons
             Row(modifier = Modifier.fillMaxWidth()) {
                 LiquidGlassButton(
                     text = "导入课表",
@@ -98,7 +124,7 @@ fun CourseScheduleScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (courses.isEmpty()) {
-                // 空状态
+                // Empty state
                 GlassCard {
                     Column(
                         modifier = Modifier
@@ -122,38 +148,39 @@ fun CourseScheduleScreen(
                     }
                 }
             } else {
-                // 课表网格
+                // Week selector
+                if (totalWeeks > 1) {
+                    WeekSelector(
+                        totalWeeks = totalWeeks,
+                        currentWeek = displayWeek,
+                        onSelectWeek = { displayWeek = it }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Filter courses for selected week
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val weekCourses = remember(courses, displayWeek, semesterStartDate) {
+                    filterCoursesForWeek(courses, displayWeek, semesterStartDate, dateFormat)
+                }
+
+                // Timetable grid
                 GlassCard {
                     TimetableGrid(
-                        courses = courses,
-                        onCourseClick = { },
+                        courses = weekCourses,
                         modifier = Modifier.padding(8.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 课程列表
-                GlassCard {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "课程列表",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10393F),
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-
-                        val grouped = courses.groupBy { it.courseName }
-                        for ((name, sessions) in grouped) {
-                            CourseGroupItem(
-                                name = name,
-                                sessions = sessions,
-                                onToggle = onToggleCourse,
-                                onDelete = onDeleteCourse
-                            )
-                        }
-                    }
+                if (weekCourses.isEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "本周没有课程",
+                        fontSize = 14.sp,
+                        color = Color(0xFF4E7F84),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
@@ -161,167 +188,247 @@ fun CourseScheduleScreen(
 }
 
 @Composable
-private fun CourseGroupItem(
-    name: String,
-    sessions: List<CourseSchedule>,
-    onToggle: (CourseSchedule) -> Unit,
-    onDelete: (CourseSchedule) -> Unit
+private fun WeekSelector(
+    totalWeeks: Int,
+    currentWeek: Int,
+    onSelectWeek: (Int) -> Unit
 ) {
-    val color = courseColor(name)
+    val scrollState = rememberScrollState()
 
-    Column(modifier = Modifier.padding(bottom = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    // Auto-scroll to current week
+    LaunchedEffect(currentWeek) {
+        val targetScroll = ((currentWeek - 1) * 48 - 150).coerceAtLeast(0)
+        scrollState.scrollTo(targetScroll)
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        for (week in 1..totalWeeks) {
+            val isSelected = week == currentWeek
             Box(
                 modifier = Modifier
-                    .size(12.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(color)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = name,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF10393F)
-            )
-        }
-
-        for (session in sessions) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 20.dp, top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "${session.dayLabel} ${session.startLabel}-${session.endLabel}" +
-                                (if (session.location.isNotEmpty()) " · ${session.location}" else "") +
-                                (if (session.weekTypeLabel.isNotEmpty()) " (${session.weekTypeLabel})" else ""),
-                        fontSize = 13.sp,
-                        color = Color(0xFF4E7F84)
+                    .size(width = 40.dp, height = 36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (isSelected) Color(0xFF39C5BB) else Color(0x15000000)
                     )
-                }
-                Switch(
-                    checked = session.enabled,
-                    onCheckedChange = { onToggle(session) },
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                    .clickable { onSelectWeek(week) },
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = "×",
-                    fontSize = 18.sp,
-                    color = Color(0xFFCCCCCC),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable { onDelete(session) }
-                        .padding(horizontal = 4.dp)
+                    text = "$week",
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) Color.White else Color(0xFF4E7F84)
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
-        HorizontalDivider(color = Color(0x20000000))
     }
 }
 
 @Composable
 private fun TimetableGrid(
     courses: List<CourseSchedule>,
-    onCourseClick: (CourseSchedule) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (courses.isEmpty()) return
+    if (courses.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "本周无课程",
+                fontSize = 14.sp,
+                color = Color(0xFF4E7F84)
+            )
+        }
+        return
+    }
 
     val hourHeight = 56.dp
     val labelWidth = 40.dp
     val dayWidth = 48.dp
 
-    // 计算时间范围
     val minHour = courses.minOf { it.startHour }.coerceAtMost(8)
     val maxHour = (courses.maxOf { it.endHour } + 1).coerceAtLeast(22)
     val hours = (minHour until maxHour).toList()
 
-    Row(modifier = modifier) {
-        // 时间标签列
-        Column {
-            for (hour in hours) {
+    // Day headers
+    val dayHeaders = listOf("", "一", "二", "三", "四", "五", "六", "日")
+
+    Column(modifier = modifier) {
+        // Header row
+        Row {
+            Box(modifier = Modifier.width(labelWidth))
+            for (day in 1..7) {
                 Box(
-                    modifier = Modifier
-                        .width(labelWidth)
-                        .height(hourHeight),
-                    contentAlignment = Alignment.TopEnd
+                    modifier = Modifier.width(dayWidth),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = String.format("%02d:00", hour),
-                        fontSize = 10.sp,
-                        color = Color(0xFF4E7F84),
-                        modifier = Modifier.padding(end = 4.dp)
+                        text = dayHeaders[day],
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF10393F)
                     )
                 }
             }
         }
 
-        // 7天列
-        for (day in 1..7) {
-            Box(
-                modifier = Modifier
-                    .width(dayWidth)
-                    .height(hourHeight * hours.size)
-            ) {
-                // 小时分割线
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Grid
+        Row {
+            // Time labels
+            Column {
                 for (hour in hours) {
-                    val offsetY = ((hour - minHour) * hourHeight.value).dp
-                    HorizontalDivider(
-                        color = Color(0x15000000),
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .offset(y = offsetY)
-                    )
-                }
-
-                // 课程块
-                for (course in courses.filter { it.dayOfWeek == day }) {
-                    val startOffset = ((course.startHour - minHour) + course.startMinute / 60f) * hourHeight.value
-                    val duration = ((course.endHour - course.startHour) + (course.endMinute - course.startMinute) / 60f) * hourHeight.value
-                    val color = courseColor(course.courseName)
-
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = color.copy(alpha = 0.2f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 1.dp)
-                            .offset(y = startOffset.dp)
-                            .height(duration.dp.coerceAtLeast(20.dp)),
-                        onClick = { onCourseClick(course) }
+                            .width(labelWidth)
+                            .height(hourHeight),
+                        contentAlignment = Alignment.TopEnd
                     ) {
-                        Column(
-                            modifier = Modifier.padding(2.dp),
-                            verticalArrangement = Arrangement.Center
+                        Text(
+                            text = String.format("%02d:00", hour),
+                            fontSize = 10.sp,
+                            color = Color(0xFF4E7F84),
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            // 7 day columns
+            for (day in 1..7) {
+                Box(
+                    modifier = Modifier
+                        .width(dayWidth)
+                        .height(hourHeight * hours.size)
+                ) {
+                    // Hour grid lines
+                    for (hour in hours) {
+                        val offsetY = ((hour - minHour) * hourHeight.value).dp
+                        HorizontalDivider(
+                            color = Color(0x15000000),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .offset(y = offsetY)
+                        )
+                    }
+
+                    // Course blocks
+                    for (course in courses.filter { it.dayOfWeek == day }) {
+                        val startOffset = ((course.startHour - minHour) + course.startMinute / 60f) * hourHeight.value
+                        val duration = ((course.endHour - course.startHour) + (course.endMinute - course.startMinute) / 60f) * hourHeight.value
+                        val color = courseColor(course.courseName)
+
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = color.copy(alpha = 0.2f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 1.dp)
+                                .offset(y = startOffset.dp)
+                                .height(duration.dp.coerceAtLeast(20.dp))
                         ) {
-                            Text(
-                                text = course.courseName,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = color,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (course.weekTypeLabel.isNotEmpty()) {
+                            Column(
+                                modifier = Modifier.padding(2.dp),
+                                verticalArrangement = Arrangement.Center
+                            ) {
                                 Text(
-                                    text = course.weekTypeLabel,
-                                    fontSize = 7.sp,
-                                    color = color.copy(alpha = 0.7f)
+                                    text = course.courseName,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = color,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                                if (course.location.isNotEmpty()) {
+                                    Text(
+                                        text = course.location,
+                                        fontSize = 7.sp,
+                                        color = color.copy(alpha = 0.7f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+
+private fun calculateTotalWeeks(courses: List<CourseSchedule>, semesterStart: String): Int {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    // Find the latest end date across all courses
+    var maxDate = ""
+    for (course in courses) {
+        for (range in course.weekRanges) {
+            if (range[1] > maxDate) maxDate = range[1]
+        }
+    }
+
+    if (maxDate.isEmpty() || semesterStart.isEmpty()) return 16 // default
+
+    return try {
+        val start = dateFormat.parse(semesterStart)!!
+        // Adjust to Monday
+        val startCal = Calendar.getInstance().apply {
+            time = start
+            while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) add(Calendar.DAY_OF_YEAR, -1)
+        }
+        val end = dateFormat.parse(maxDate)!!
+        val diffMs = end.time - startCal.timeInMillis
+        val weeks = (diffMs / (7 * 24 * 60 * 60 * 1000)).toInt() + 1
+        weeks.coerceIn(1, 30)
+    } catch (_: Exception) { 16 }
+}
+
+private fun filterCoursesForWeek(
+    courses: List<CourseSchedule>,
+    weekNum: Int,
+    semesterStart: String,
+    dateFormat: SimpleDateFormat
+): List<CourseSchedule> {
+    if (semesterStart.isEmpty()) return courses
+
+    // Calculate Monday of the target week
+    val weekMonday = try {
+        val start = dateFormat.parse(semesterStart)!!
+        val cal = Calendar.getInstance().apply {
+            time = start
+            while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) add(Calendar.DAY_OF_YEAR, -1)
+            add(Calendar.DAY_OF_YEAR, (weekNum - 1) * 7)
+        }
+        dateFormat.format(cal.time)
+    } catch (_: Exception) { return courses }
+
+    // Calculate Sunday of the target week
+    val weekSunday = try {
+        val cal = Calendar.getInstance().apply {
+            time = dateFormat.parse(weekMonday)!!
+            add(Calendar.DAY_OF_YEAR, 6)
+        }
+        dateFormat.format(cal.time)
+    } catch (_: Exception) { return courses }
+
+    return courses.filter { course ->
+        if (course.weekRanges.isEmpty()) return@filter true // no limit = always active
+        // Check if any week range overlaps with the target week
+        course.weekRanges.any { range ->
+            range[0] <= weekSunday && range[1] >= weekMonday
         }
     }
 }
