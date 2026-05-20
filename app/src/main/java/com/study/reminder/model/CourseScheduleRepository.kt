@@ -67,34 +67,10 @@ object CourseScheduleRepository {
     fun setSemesterStartDate(context: Context, date: String) {
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().putString(PREF_SEMESTER_START, date).apply()
-        // 设置学期起始日后，解析隔周课程的单双周
-        resolveAllWeekTypes(context)
     }
 
     /**
-     * 设置学期起始日后，对所有隔周课程（courseStartDate 有值且 weekType=ALL）解析单双周
-     */
-    private fun resolveAllWeekTypes(context: Context) {
-        val semesterStart = getSemesterStartDate(context)
-        if (semesterStart.isEmpty()) return
-        val courses = getCourses(context).toMutableList()
-        var changed = false
-        for (i in courses.indices) {
-            val c = courses[i]
-            if (c.biweekly && c.courseStartDate.isNotEmpty() && c.weekType == WeekType.ALL) {
-                val courseWeek = weeksBetween(semesterStart, c.courseStartDate)
-                val newType = if (courseWeek % 2 == 0) WeekType.ODD else WeekType.EVEN
-                if (newType != c.weekType) {
-                    courses[i] = c.copy(weekType = newType)
-                    changed = true
-                }
-            }
-        }
-        if (changed) saveCourses(context, courses)
-    }
-
-    /**
-     * 计算当前是学期第几周（从1开始）
+     * 计算当前是学期第几周（从1开始），仅用于显示
      */
     fun getSemesterWeekNumber(context: Context): Int {
         val start = getSemesterStartDate(context)
@@ -102,7 +78,6 @@ object CourseScheduleRepository {
         return try {
             val startCal = Calendar.getInstance().apply {
                 time = dateFormat.parse(start)!!
-                // 调整到当周周一
                 while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
                     add(Calendar.DAY_OF_YEAR, -1)
                 }
@@ -112,14 +87,6 @@ object CourseScheduleRepository {
             val diffDays = (diffMs / (24 * 60 * 60 * 1000)).toInt()
             (diffDays / 7) + 1
         } catch (_: Exception) { 0 }
-    }
-
-    /**
-     * 判断当前是否为奇数周（相对学期起始日）
-     */
-    fun isOddWeek(context: Context): Boolean {
-        val weekNum = getSemesterWeekNumber(context)
-        return weekNum % 2 == 1
     }
 
     // ── 活跃课程检测 ────────────────────────────────────────
@@ -136,9 +103,6 @@ object CourseScheduleRepository {
         val dow = adjustedDayOfWeek(now)
         if (dow != course.dayOfWeek) return false
 
-        // 检查结束日期
-        if (course.endDate.isNotEmpty() && today > course.endDate) return false
-
         // 检查排除日期
         if (today in course.exDates) return false
 
@@ -148,15 +112,14 @@ object CourseScheduleRepository {
         val endMin = course.endHour * 60 + course.endMinute
         if (nowMin !in startMin until endMin) return false
 
-        // 检查单双周
-        if (course.weekType != WeekType.ALL) {
-            val semesterStart = getSemesterStartDate(context)
-            if (semesterStart.isEmpty()) return false
-            val weeksDiff = weeksBetween(semesterStart, today)
-            val isOddWeek = weeksDiff % 2 == 0 // 第0周 = 第1周 = 单周
-            if (course.weekType == WeekType.ODD && !isOddWeek) return false
-            if (course.weekType == WeekType.EVEN && isOddWeek) return false
+        // 检查 weekRanges: today 必须在某个范围内
+        if (course.weekRanges.isNotEmpty()) {
+            val inRange = course.weekRanges.any { range ->
+                today >= range[0] && today <= range[1]
+            }
+            if (!inRange) return false
         }
+        // weekRanges 为空 = 无限制（一直有效）
 
         return true
     }
@@ -174,30 +137,5 @@ object CourseScheduleRepository {
             Calendar.SUNDAY -> 7
             else -> 0
         }
-    }
-
-    private fun weeksBetween(date1Str: String, date2Str: String): Int {
-        return try {
-            val date1 = dateFormat.parse(date1Str)!!
-            val date2 = dateFormat.parse(date2Str)!!
-            val cal1 = Calendar.getInstance().apply {
-                time = date1
-                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            val cal2 = Calendar.getInstance().apply {
-                time = date2
-                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            val diffMs = cal2.timeInMillis - cal1.timeInMillis
-            (diffMs / (7 * 24 * 60 * 60 * 1000)).toInt()
-        } catch (_: Exception) { 0 }
     }
 }

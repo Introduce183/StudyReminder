@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.model.CourseSchedule
 import com.study.reminder.model.CourseScheduleRepository
-import com.study.reminder.model.WeekType
 
 // 课程颜色池
 private val courseColors = listOf(
@@ -48,7 +47,6 @@ fun CourseScheduleScreen(
 ) {
     val context = LocalContext.current
     val weekNum = remember(semesterStartDate) { CourseScheduleRepository.getSemesterWeekNumber(context) }
-    val isOdd = remember(semesterStartDate) { CourseScheduleRepository.isOddWeek(context) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -72,7 +70,7 @@ fun CourseScheduleScreen(
             // 学期信息
             if (semesterStartDate.isNotEmpty() && weekNum > 0) {
                 Text(
-                    text = "第${weekNum}周 · ${if (isOdd) "单周" else "双周"}",
+                    text = "第${weekNum}周",
                     fontSize = 14.sp,
                     color = Color(0xFF4E7F84),
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -313,7 +311,7 @@ private fun TimetableGrid(
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            if (course.weekType != WeekType.ALL) {
+                            if (course.weekTypeLabel.isNotEmpty()) {
                                 Text(
                                     text = course.weekTypeLabel,
                                     fontSize = 7.sp,

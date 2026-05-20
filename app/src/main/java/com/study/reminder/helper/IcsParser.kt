@@ -1,7 +1,6 @@
 package com.study.reminder.helper
 
 import com.study.reminder.model.CourseSchedule
-import com.study.reminder.model.WeekType
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -15,81 +14,87 @@ object IcsParser {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private val icsDateOnlyFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
-    private val icsDateTimeFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.getDefault())
-    private val icsDateTimeZFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.getDefault())
 
     fun parseIcs(content: String): IcsParseResult {
         val warnings = mutableListOf<String>()
-        val courses = mutableListOf<CourseSchedule>()
         val allStartDates = mutableListOf<String>()
 
         val lines = unfoldLines(content)
         val events = splitIntoEvents(lines)
 
+        val parsedEvents = mutableListOf<RawVEvent>()
+
         for (eventLines in events) {
             try {
                 val parsed = parseVEvent(eventLines, warnings) ?: continue
                 allStartDates.add(parsed.startDate)
-
-                // 只处理 FREQ=WEEKLY 的事件
-                if (parsed.freq != "WEEKLY") {
-                    warnings.add("跳过非每周重复事件: ${parsed.summary}")
-                    continue
-                }
-
-                val byDays = parsed.byDays
-                if (byDays.isEmpty()) {
-                    warnings.add("跳过无星期信息的事件: ${parsed.summary}")
-                    continue
-                }
-
-                // 计算 endDate
-                val endDate = calculateEndDate(parsed)
-
-                // 计算 weekType 和 biweekly
-                val isBiweekly = parsed.interval >= 2
-                val weekType = determineWeekType(parsed)
-
-                // 为每个 BYDAY 生成一个 CourseSchedule
-                for (dayOfWeek in byDays) {
-                    courses.add(
-                        CourseSchedule(
-                            courseName = parsed.summary,
-                            location = parsed.location,
-                            startHour = parsed.startHour,
-                            startMinute = parsed.startMinute,
-                            endHour = parsed.endHour,
-                            endMinute = parsed.endMinute,
-                            dayOfWeek = dayOfWeek,
-                            weekType = weekType,
-                            courseStartDate = parsed.startDate,
-                            biweekly = isBiweekly,
-                            endDate = endDate,
-                            exDates = parsed.exDates
-                        )
-                    )
-                }
+                parsedEvents.add(parsed)
             } catch (e: Exception) {
                 warnings.add("解析事件出错: ${e.message}")
             }
         }
 
-        // 去重: (courseName, dayOfWeek, startHour, startMinute) 相同的只保留一个
+        // Group by (courseName, dayOfWeek, startHour, startMinute, endHour, endMinute)
+        val grouped = parsedEvents.groupBy { ev ->
+            "${ev.summary}|${ev.dayOfWeek}|${ev.startHour}:${ev.startMinute}|${ev.endHour}:${ev.endMinute}"
+        }
+
+        val courses = mutableListOf<CourseSchedule>()
+
+        for ((_, evts) in grouped) {
+            val first = evts.first()
+
+            // Collect week ranges: each VEVENT contributes [startDate, untilDate]
+            val weekRanges = mutableListOf<List<String>>()
+            val allExDates = mutableSetOf<String>()
+
+            for (ev in evts) {
+                allExDates.addAll(ev.exDates)
+                if (ev.untilDate.isNotEmpty()) {
+                    weekRanges.add(listOf(ev.startDate, ev.untilDate))
+                } else {
+                    // No UNTIL = runs until end of semester
+                    // Use a far-future date
+                    weekRanges.add(listOf(ev.startDate, "2099-12-31"))
+                }
+            }
+
+            // Sort ranges by start date
+            weekRanges.sortBy { it[0] }
+
+            // Merge adjacent/overlapping ranges
+            val merged = mergeRanges(weekRanges)
+
+            courses.add(
+                CourseSchedule(
+                    courseName = first.summary,
+                    location = first.location,
+                    startHour = first.startHour,
+                    startMinute = first.startMinute,
+                    endHour = first.endHour,
+                    endMinute = first.endMinute,
+                    dayOfWeek = first.dayOfWeek,
+                    weekRanges = merged,
+                    exDates = allExDates
+                )
+            )
+        }
+
+        // Deduplicate: (courseName, dayOfWeek, startHour, startMinute) same -> keep one
         val deduped = courses.distinctBy { "${it.courseName}_${it.dayOfWeek}_${it.startHour}_${it.startMinute}" }
 
-        // 学期起始日 = 最早的 DTSTART 日期
+        // Semester start = earliest DTSTART
         val semesterStart = allStartDates.minOrNull() ?: ""
 
         return IcsParseResult(deduped, semesterStart, warnings)
     }
 
-    // ── 行展开 ─────────────────────────────────────────────
+    // ── Line unfolding ─────────────────────────────────────────
 
     private fun unfoldLines(content: String): List<String> {
         val result = mutableListOf<String>()
         for (line in content.lines()) {
             if (line.startsWith(" ") || line.startsWith("\t")) {
-                // 折叠行：拼接到上一行
                 if (result.isNotEmpty()) {
                     result[result.lastIndex] += line.substring(1)
                 }
@@ -100,7 +105,7 @@ object IcsParser {
         return result
     }
 
-    // ── 分割 VEVENT 块 ─────────────────────────────────────
+    // ── Split into VEVENT blocks ───────────────────────────────
 
     private fun splitIntoEvents(lines: List<String>): List<List<String>> {
         val events = mutableListOf<List<String>>()
@@ -124,25 +129,22 @@ object IcsParser {
         return events
     }
 
-    // ── 解析单个 VEVENT ────────────────────────────────────
+    // ── Parse single VEVENT ────────────────────────────────────
 
-    private data class ParsedEvent(
+    private data class RawVEvent(
         val summary: String,
         val location: String,
-        val startDate: String,  // yyyy-MM-dd
+        val startDate: String,
         val startHour: Int,
         val startMinute: Int,
         val endHour: Int,
         val endMinute: Int,
-        val freq: String,
-        val interval: Int,
-        val byDays: List<Int>,
-        val count: Int,
-        val until: String,
+        val dayOfWeek: Int,
+        val untilDate: String,
         val exDates: Set<String>
     )
 
-    private fun parseVEvent(lines: List<String>, warnings: MutableList<String>): ParsedEvent? {
+    private fun parseVEvent(lines: List<String>, warnings: MutableList<String>): RawVEvent? {
         var summary = ""
         var location = ""
         var dtStart = ""
@@ -159,7 +161,6 @@ object IcsParser {
                 line.startsWith("RRULE:") -> rrule = line.substringAfter("RRULE:")
                 line.startsWith("EXDATE") -> {
                     val value = line.substringAfter(":")
-                    // EXDATE 可能有多个值，逗号分隔
                     for (part in value.split(",")) {
                         val dateStr = extractDate(part.trim())
                         if (dateStr.isNotEmpty()) exDates.add(dateStr)
@@ -172,17 +173,30 @@ object IcsParser {
         if (dtStart.isEmpty()) return null
 
         val (startDate, startHour, startMinute) = parseDateTime(dtStart)
-        val (_, endHour, endMinute) = if (dtEnd.isNotEmpty()) parseDateTime(dtEnd) else Triple(startDate, startHour + 1, startMinute)
+        val (_, endHour, endMinute) = if (dtEnd.isNotEmpty()) parseDateTime(dtEnd)
+            else Triple(startDate, startHour + 1, startMinute)
 
-        // 解析 RRULE
+        // Parse RRULE for UNTIL and BYDAY
         val rruleMap = parseRRule(rrule)
-        val freq = rruleMap["FREQ"] ?: ""
-        val interval = rruleMap["INTERVAL"]?.toIntOrNull() ?: 1
-        val byDays = parseBYDAY(rruleMap["BYDAY"] ?: "")
-        val count = rruleMap["COUNT"]?.toIntOrNull() ?: 0
-        val until = extractDate(rruleMap["UNTIL"] ?: "")
+        val untilStr = rruleMap["UNTIL"] ?: ""
+        val untilDate = extractDate(untilStr)
+        val byDayStr = rruleMap["BYDAY"] ?: ""
 
-        return ParsedEvent(
+        // Determine dayOfWeek: prefer RRULE BYDAY, fallback to DTSTART
+        val dayOfWeek = if (byDayStr.isNotEmpty()) {
+            parseBYDAY(byDayStr).firstOrNull() ?: dayOfWeekFromDateString(startDate)
+        } else {
+            dayOfWeekFromDateString(startDate)
+        }
+
+        // Check FREQ=WEEKLY
+        val freq = rruleMap["FREQ"] ?: ""
+        if (freq.isNotEmpty() && freq != "WEEKLY") {
+            warnings.add("跳过非每周重复事件: $summary (FREQ=$freq)")
+            return null
+        }
+
+        return RawVEvent(
             summary = summary,
             location = location,
             startDate = startDate,
@@ -190,23 +204,16 @@ object IcsParser {
             startMinute = startMinute,
             endHour = endHour,
             endMinute = endMinute,
-            freq = freq,
-            interval = interval,
-            byDays = byDays,
-            count = count,
-            until = until,
+            dayOfWeek = dayOfWeek,
+            untilDate = untilDate,
             exDates = exDates
         )
     }
 
-    // ── 日期时间解析 ───────────────────────────────────────
+    // ── Date/time parsing ──────────────────────────────────────
 
     private fun parseDateTime(value: String): Triple<String, Int, Int> {
-        // 支持格式:
-        // 20240902T080000Z
-        // 20240902T080000
-        // TZID=Asia/Shanghai:20240902T080000
-        // VALUE=DATE:20240902
+        // Supports: TZID=Asia/Shanghai:20250902T080000, 20250902T080000Z, 20250902T080000, 20250902
         val cleanValue = value.substringAfter(":")
 
         return try {
@@ -238,7 +245,19 @@ object IcsParser {
         } catch (_: Exception) { "" }
     }
 
-    // ── RRULE 解析 ─────────────────────────────────────────
+    private fun dayOfWeekFromDateString(dateStr: String): Int {
+        return try {
+            val date = dateFormat.parse(dateStr)!!
+            val cal = Calendar.getInstance().apply { time = date }
+            when (cal.get(Calendar.DAY_OF_WEEK)) {
+                Calendar.MONDAY -> 1; Calendar.TUESDAY -> 2; Calendar.WEDNESDAY -> 3
+                Calendar.THURSDAY -> 4; Calendar.FRIDAY -> 5; Calendar.SATURDAY -> 6
+                Calendar.SUNDAY -> 7; else -> 0
+            }
+        } catch (_: Exception) { 0 }
+    }
+
+    // ── RRULE parsing ──────────────────────────────────────────
 
     private fun parseRRule(value: String): Map<String, String> {
         if (value.isEmpty()) return emptyMap()
@@ -254,7 +273,6 @@ object IcsParser {
     }
 
     private fun dayOfWeekFromIcs(code: String): Int? {
-        // BYDAY 可能带数字前缀，如 "1MO"（第一个周一）
         val cleanCode = code.replace(Regex("^\\d+"), "")
         return when (cleanCode) {
             "MO" -> 1; "TU" -> 2; "WE" -> 3; "TH" -> 4
@@ -262,30 +280,34 @@ object IcsParser {
         }
     }
 
-    // ── 计算 endDate ───────────────────────────────────────
+    // ── Range merging ──────────────────────────────────────────
 
-    private fun calculateEndDate(event: ParsedEvent): String {
-        return when {
-            event.until.isNotEmpty() -> event.until
-            event.count > 0 -> {
-                try {
-                    val start = dateFormat.parse(event.startDate)!!
-                    val cal = Calendar.getInstance().apply { time = start }
-                    val intervalDays = if (event.interval > 1) event.interval * 7 else 7
-                    cal.add(Calendar.DAY_OF_YEAR, (event.count - 1) * intervalDays)
-                    dateFormat.format(cal.time)
-                } catch (_: Exception) { "" }
+    private fun mergeRanges(ranges: List<List<String>>): List<List<String>> {
+        if (ranges.isEmpty()) return emptyList()
+        val sorted = ranges.sortedBy { it[0] }.toMutableList()
+        val merged = mutableListOf(sorted[0])
+        for (i in 1 until sorted.size) {
+            val last = merged.last()
+            val curr = sorted[i]
+            // If ranges overlap or are adjacent (gap <= 7 days), merge
+            if (curr[0] <= addDays(last[1], 7)) {
+                val newEnd = if (curr[1] > last[1]) curr[1] else last[1]
+                merged[merged.lastIndex] = listOf(last[0], newEnd)
+            } else {
+                merged.add(curr)
             }
-            else -> "" // 无限
         }
+        return merged
     }
 
-    // ── 判断单双周 ─────────────────────────────────────────
-
-    private fun determineWeekType(event: ParsedEvent): WeekType {
-        if (event.interval < 2) return WeekType.ALL
-        // INTERVAL=2 表示隔周，暂时返回 ALL
-        // 实际单双周由 CourseScheduleRepository.resolveWeekType() 在用户设置学期起始日后计算
-        return WeekType.ALL
+    private fun addDays(dateStr: String, days: Int): String {
+        return try {
+            val date = dateFormat.parse(dateStr)!!
+            val cal = Calendar.getInstance().apply {
+                time = date
+                add(Calendar.DAY_OF_YEAR, days)
+            }
+            dateFormat.format(cal.time)
+        } catch (_: Exception) { dateStr }
     }
 }

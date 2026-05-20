@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Build
 import com.study.reminder.model.CourseSchedule
 import com.study.reminder.model.CourseScheduleRepository
-import com.study.reminder.model.WeekType
 import com.study.reminder.service.CourseAlarmReceiver
 import java.text.SimpleDateFormat
 import java.util.*
@@ -33,8 +32,7 @@ object CourseScheduler {
     }
 
     fun scheduleCourse(context: Context, am: AlarmManager, course: CourseSchedule) {
-        val semesterStart = CourseScheduleRepository.getSemesterStartDate(context)
-        val triggerTime = nextTriggerMillis(course, semesterStart) ?: return
+        val triggerTime = nextTriggerMillis(course) ?: return
 
         val intent = Intent(context, CourseAlarmReceiver::class.java).apply {
             action = CourseAlarmReceiver.ACTION_COURSE_TRIGGER
@@ -86,14 +84,17 @@ object CourseScheduler {
 
     /**
      * 计算课程下次触发时间
-     * 向前搜索 14 天（覆盖单双周间隔）
+     * 向前搜索 14 天
      */
-    private fun nextTriggerMillis(course: CourseSchedule, semesterStart: String): Long? {
+    private fun nextTriggerMillis(course: CourseSchedule): Long? {
         val now = Calendar.getInstance()
         val today = dateFormat.format(now.time)
 
-        // 检查 endDate
-        if (course.endDate.isNotEmpty() && today > course.endDate) return null
+        // 如果 weekRanges 非空，检查是否还有未过期的范围
+        if (course.weekRanges.isNotEmpty()) {
+            val lastEnd = course.weekRanges.maxOf { it[1] }
+            if (today > lastEnd) return null
+        }
 
         val cal = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, course.startHour)
@@ -107,10 +108,7 @@ object CourseScheduler {
             candidate.add(Calendar.DAY_OF_YEAR, offset)
             val candidateDate = dateFormat.format(candidate.time)
 
-            // 检查 endDate
-            if (course.endDate.isNotEmpty() && candidateDate > course.endDate) return null
-
-            // 检查 exDates
+            // 检查排除日期
             if (candidateDate in course.exDates) return@repeat
 
             // 检查星期
@@ -118,12 +116,12 @@ object CourseScheduler {
             val adjustedDow = if (dow == Calendar.SUNDAY) 7 else dow - 1
             if (adjustedDow != course.dayOfWeek) return@repeat
 
-            // 检查单双周
-            if (course.weekType != WeekType.ALL && semesterStart.isNotEmpty()) {
-                val weeksDiff = weeksBetween(semesterStart, candidateDate)
-                val isOddWeek = weeksDiff % 2 == 0
-                if (course.weekType == WeekType.ODD && !isOddWeek) return@repeat
-                if (course.weekType == WeekType.EVEN && isOddWeek) return@repeat
+            // 检查 weekRanges
+            if (course.weekRanges.isNotEmpty()) {
+                val inRange = course.weekRanges.any { range ->
+                    candidateDate >= range[0] && candidateDate <= range[1]
+                }
+                if (!inRange) return@repeat
             }
 
             if (candidate.after(now)) {
@@ -131,23 +129,5 @@ object CourseScheduler {
             }
         }
         return null
-    }
-
-    private fun weeksBetween(date1Str: String, date2Str: String): Int {
-        return try {
-            val date1 = dateFormat.parse(date1Str)!!
-            val date2 = dateFormat.parse(date2Str)!!
-            val cal1 = Calendar.getInstance().apply {
-                time = date1
-                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-            }
-            val cal2 = Calendar.getInstance().apply {
-                time = date2
-                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-            }
-            ((cal2.timeInMillis - cal1.timeInMillis) / (7 * 24 * 60 * 60 * 1000)).toInt()
-        } catch (_: Exception) { 0 }
     }
 }
