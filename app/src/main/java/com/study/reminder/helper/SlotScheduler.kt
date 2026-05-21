@@ -71,7 +71,7 @@ object SlotScheduler {
 
     private fun slotRequestCode(slot: StudySlot): Int = slotRequestCode(slot.id)
 
-    private fun slotRequestCode(slotId: Long): Int = (slotId xor (slotId ushr 32)).toInt()
+    private fun slotRequestCode(slotId: Long): Int = ((slotId xor (slotId ushr 32)).toInt()) xor 0x3C9D
 
     private fun loadScheduledSlotIds(context: Context): Set<Long> {
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)

@@ -54,6 +54,8 @@ object NotificationHelper {
         )
     }
 
+    private const val REQUEST_STOP = 9001
+
     fun buildForegroundNotification(context: Context, remainingSeconds: Int): Notification {
         val h = remainingSeconds / 3600
         val m = (remainingSeconds % 3600) / 60
@@ -67,12 +69,22 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val stopIntent = PendingIntent.getService(
+            context,
+            REQUEST_STOP,
+            Intent(context, com.study.reminder.service.TimerService::class.java).apply {
+                action = com.study.reminder.service.TimerService.ACTION_STOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(context, CHANNEL_FOREGROUND)
             .setSmallIcon(R.drawable.ic_timer)
             .setContentTitle("Study timer running")
             .setContentText("Remaining: $timeStr")
             .setOngoing(true)
             .setContentIntent(pendingIntent)
+            .addAction(0, "Stop", stopIntent)
             .setSilent(true)
             .build()
     }
@@ -85,12 +97,21 @@ object NotificationHelper {
             Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val stopIntent = PendingIntent.getService(
+            context,
+            REQUEST_STOP,
+            Intent(context, com.study.reminder.service.TimerService::class.java).apply {
+                action = com.study.reminder.service.TimerService.ACTION_STOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val notification = NotificationCompat.Builder(context, CHANNEL_FOREGROUND)
             .setSmallIcon(R.drawable.ic_timer)
             .setContentTitle("Study timer running")
             .setContentText("Remaining: $timeStr")
             .setOngoing(true)
             .setContentIntent(pendingIntent)
+            .addAction(0, "Stop", stopIntent)
             .setSilent(true)
             .build()
         nm.notify(FOREGROUND_ID, notification)

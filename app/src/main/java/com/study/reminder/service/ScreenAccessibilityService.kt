@@ -49,7 +49,10 @@ class ScreenAccessibilityService : AccessibilityService() {
         val pkg = event?.packageName?.toString() ?: return
         if (pkg == lastPackageName) return
         lastPackageName = pkg
-        // 只对有桌面图标的用户应用触发提醒，系统组件/手势栏/桌面本身都不会命中
+        // Refresh cache if package unknown (newly installed app)
+        if (pkg !in launcherPkgs) {
+            cacheLauncherPackages()
+        }
         if (pkg !in launcherPkgs) return
         if (pkg == packageName) return
         checkAndRemind(pkg)

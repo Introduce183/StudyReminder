@@ -33,7 +33,9 @@ object ReminderDispatcher {
         enForce: Boolean
     ) {
         val requestFullScreen = enFull || enForce
-        val launchedFullScreen = if (requestFullScreen) {
+
+        // Try launching fullscreen overlay (may silently fail without permission)
+        if (requestFullScreen) {
             runCatching {
                 context.startService(Intent(context, OverlayService::class.java).apply {
                     action = OverlayService.ACTION_SHOW_FULLSCREEN_ALERT
@@ -41,18 +43,16 @@ object ReminderDispatcher {
                     putExtra(OverlayService.EXTRA_EMOJI, emoji)
                     putExtra(OverlayService.EXTRA_GO_HOME_ON_SHOW, enForce)
                 })
-            }.isSuccess
-        } else {
-            false
+            }
         }
-        val shouldNotify = enNotif
 
-        if (shouldNotify) {
+        // Notification always acts as fallback — keep FullScreenIntent regardless
+        if (enNotif) {
             NotificationHelper.showRepeatingAlertNotification(
                 context = context,
                 message = message,
                 emoji = emoji,
-                requestFullScreen = requestFullScreen && !launchedFullScreen,
+                requestFullScreen = requestFullScreen,
                 goHomeOnShow = enForce
             )
         }

@@ -1,6 +1,7 @@
 package com.study.reminder.model
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -51,6 +52,7 @@ object StudyStatsRepository {
     private const val PREF_SESSIONS = "study_sessions"
     private const val PREF_DISTRACTIONS = "distraction_events"
     private const val PREF_ACTIVE_START = "active_session_start"
+    private const val PREF_ACTIVE_SLOT_ID = "active_slot_id"
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
     // ── 会话管理 ──────────────────────────────────────────────
@@ -62,6 +64,7 @@ object StudyStatsRepository {
         }
         prefs.edit()
             .putLong(PREF_ACTIVE_START, System.currentTimeMillis())
+            .putLong(PREF_ACTIVE_SLOT_ID, slotId)
             .apply()
     }
 
@@ -74,7 +77,7 @@ object StudyStatsRepository {
         val durationMin = ((endMs - startMs) / 60_000).toInt().coerceAtLeast(0)
 
         // 清除活跃会话标记
-        prefs.edit().remove(PREF_ACTIVE_START).apply()
+        prefs.edit().remove(PREF_ACTIVE_START).remove(PREF_ACTIVE_SLOT_ID).apply()
 
         if (durationMin < 1) return
 
@@ -155,7 +158,10 @@ object StudyStatsRepository {
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { StudySession.fromJson(arr.getJSONObject(it)) }
-        } catch (_: Exception) { emptyList() }
+        } catch (e: Exception) {
+            Log.w("StudyStats", "Failed to parse sessions JSON, resetting", e)
+            emptyList()
+        }
     }
 
     private fun saveSessions(context: Context, sessions: List<StudySession>) {
@@ -171,7 +177,10 @@ object StudyStatsRepository {
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { DistractionEvent.fromJson(arr.getJSONObject(it)) }
-        } catch (_: Exception) { emptyList() }
+        } catch (e: Exception) {
+            Log.w("StudyStats", "Failed to parse distractions JSON, resetting", e)
+            emptyList()
+        }
     }
 
     private fun saveDistractions(context: Context, events: List<DistractionEvent>) {
