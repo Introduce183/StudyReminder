@@ -65,7 +65,7 @@ object CourseScheduler {
     }
 
     private fun courseRequestCode(course: CourseSchedule): Int = courseRequestCode(course.id)
-    private fun courseRequestCode(courseId: Long): Int = courseId.hashCode() xor 0x7A1B
+    private fun courseRequestCode(courseId: Long): Int = ((courseId xor (courseId ushr 32)).toInt()) xor 0x7A1B
 
     private fun loadScheduledIds(context: Context): Set<Long> {
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)

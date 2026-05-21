@@ -24,6 +24,9 @@ object NotificationHelper {
     private const val REQUEST_MAIN = 3001
     private const val REQUEST_ALERT = 3002
 
+    private var alertHandler: Handler? = null
+    private var alertRunnable: Runnable? = null
+
     fun createChannels(context: Context) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -100,6 +103,9 @@ object NotificationHelper {
         requestFullScreen: Boolean = false,
         goHomeOnShow: Boolean = false
     ) {
+        // Cancel any in-flight repeating sequence
+        alertHandler?.removeCallbacksAndMessages(null)
+
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (isDeviceLocked(context)) {
             val notification = buildAlertNotification(
@@ -111,11 +117,15 @@ object NotificationHelper {
                 goHomeOnShow = goHomeOnShow
             )
             nm.notify(ALERT_ID, notification)
-            Handler(Looper.getMainLooper()).postDelayed({ nm.cancel(ALERT_ID) }, 30_000L)
+            val h = Handler(Looper.getMainLooper())
+            alertHandler = h
+            alertRunnable = Runnable { nm.cancel(ALERT_ID) }
+            h.postDelayed(alertRunnable!!, 30_000L)
             return
         }
 
         val handler = Handler(Looper.getMainLooper())
+        alertHandler = handler
         val totalRepeat = 6
         var count = 0
 
@@ -139,6 +149,7 @@ object NotificationHelper {
                 handler.postDelayed(this, 2000L)
             }
         }
+        alertRunnable = runnable
         handler.post(runnable)
     }
 
@@ -198,6 +209,9 @@ object NotificationHelper {
     }
 
     fun cancelAll(context: Context) {
+        alertHandler?.removeCallbacksAndMessages(null)
+        alertHandler = null
+        alertRunnable = null
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(ALERT_ID)
         nm.cancel(FOREGROUND_ID)

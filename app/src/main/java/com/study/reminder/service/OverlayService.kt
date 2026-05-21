@@ -40,6 +40,9 @@ class OverlayService : Service() {
     private var dynamicIslandView: View? = null
     private var smallWindowView: View? = null
     private var fullscreenView: View? = null
+    @Volatile private var isRemovingIsland = false
+    @Volatile private var isRemovingSmall = false
+    @Volatile private var isRemovingFullscreen = false
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -137,10 +140,13 @@ class OverlayService : Service() {
     }
 
     private fun removeDynamicIsland() {
+        if (isRemovingIsland) return
+        isRemovingIsland = true
         dynamicIslandView?.let {
             runCatching { windowManager?.removeView(it) }
         }
         dynamicIslandView = null
+        isRemovingIsland = false
     }
 
     private fun showSmallWindow(message: String, emoji: String) {
@@ -296,17 +302,23 @@ class OverlayService : Service() {
     }
 
     private fun removeSmallWindow() {
+        if (isRemovingSmall) return
+        isRemovingSmall = true
         smallWindowView?.let {
             runCatching { windowManager?.removeView(it) }
         }
         smallWindowView = null
+        isRemovingSmall = false
     }
 
     private fun removeFullscreenAlert() {
+        if (isRemovingFullscreen) return
+        isRemovingFullscreen = true
         fullscreenView?.let {
             runCatching { windowManager?.removeView(it) }
         }
         fullscreenView = null
+        isRemovingFullscreen = false
     }
 
     private fun removeAllOverlays() {

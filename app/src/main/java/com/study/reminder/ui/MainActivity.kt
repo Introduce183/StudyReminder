@@ -350,7 +350,6 @@ class MainActivity : ComponentActivity() {
                     val startDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
                     CourseScheduleRepository.replaceAllCourses(this, result.courses)
                     CourseScheduleRepository.setSemesterStartDate(this, startDate)
-                    refreshCourseList()
                     CourseScheduler.rescheduleAll(this)
                     refreshCourseList()
 

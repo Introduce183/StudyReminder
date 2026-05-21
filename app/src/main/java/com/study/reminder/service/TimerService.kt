@@ -161,6 +161,8 @@ class TimerService : Service() {
         if (StudyStatsRepository.hasActiveSession(this)) {
             StudyStatsRepository.endSession(this)
         }
+        remainingTimeLive.postValue(0)
+        timerRunningLive.postValue(false)
         serviceScope.cancel()
         super.onDestroy()
     }
