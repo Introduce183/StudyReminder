@@ -166,9 +166,13 @@ fun CourseScheduleScreen(
                 }
 
                 // Timetable grid
+                val weekDates = remember(displayWeek, semesterStartDate) {
+                    getWeekDates(displayWeek, semesterStartDate)
+                }
                 GlassCard {
                     TimetableGrid(
                         courses = weekCourses,
+                        weekDates = weekDates,
                         modifier = Modifier.padding(8.dp)
                     )
                 }
@@ -240,6 +244,7 @@ private fun WeekSelector(
 @Composable
 private fun TimetableGrid(
     courses: List<CourseSchedule>,
+    weekDates: List<String>,
     modifier: Modifier = Modifier
 ) {
     if (courses.isEmpty()) {
@@ -270,13 +275,13 @@ private fun TimetableGrid(
     val dayHeaders = listOf("", "一", "二", "三", "四", "五", "六", "日")
 
     Column(modifier = modifier) {
-        // Header row
+        // Header row — day name + date
         Row {
             Box(modifier = Modifier.width(labelWidth))
             for (day in 1..7) {
-                Box(
+                Column(
                     modifier = Modifier.width(dayWidth),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = dayHeaders[day],
@@ -284,6 +289,13 @@ private fun TimetableGrid(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF10393F)
                     )
+                    if (day <= weekDates.size) {
+                        Text(
+                            text = weekDates[day - 1],
+                            fontSize = 9.sp,
+                            color = Color(0xFF4E7F84)
+                        )
+                    }
                 }
             }
         }
@@ -375,6 +387,25 @@ private fun TimetableGrid(
 }
 
 // ── Helpers ────────────────────────────────────────────────────
+
+private fun getWeekDates(weekNum: Int, semesterStart: String): List<String> {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    return try {
+        val start = dateFormat.parse(semesterStart)!!
+        val cal = Calendar.getInstance().apply {
+            time = start
+            while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) add(Calendar.DAY_OF_YEAR, -1)
+            add(Calendar.DAY_OF_YEAR, (weekNum - 1) * 7)
+        }
+        (0..6).map { offset ->
+            val d = Calendar.getInstance().apply {
+                time = cal.time
+                add(Calendar.DAY_OF_YEAR, offset)
+            }
+            "${d.get(Calendar.MONTH) + 1}/${d.get(Calendar.DAY_OF_MONTH)}"
+        }
+    } catch (_: Exception) { emptyList() }
+}
 
 private fun calculateTotalWeeks(courses: List<CourseSchedule>, semesterStart: String): Int {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
