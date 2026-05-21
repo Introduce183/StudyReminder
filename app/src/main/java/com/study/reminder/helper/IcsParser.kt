@@ -48,9 +48,14 @@ object IcsParser {
             val weekRanges = mutableListOf<List<String>>()
             val allExDates = mutableSetOf<String>()
 
+            val isRecurring = evts.any { it.isRecurring }
+
             for (ev in evts) {
                 allExDates.addAll(ev.exDates)
-                if (ev.untilDate.isNotEmpty()) {
+                if (!isRecurring) {
+                    // Single event: only active on its exact date
+                    weekRanges.add(listOf(ev.startDate, ev.startDate))
+                } else if (ev.untilDate.isNotEmpty()) {
                     // UNTIL is the date of the last occurrence (Monday of last week)
                     // Extend by 6 days to cover the full final week (Mon-Sun)
                     weekRanges.add(listOf(ev.startDate, addDays(ev.untilDate, 6)))
@@ -85,8 +90,19 @@ object IcsParser {
         // Deduplicate: (courseName, dayOfWeek, startHour, startMinute, endHour, endMinute) same -> keep one
         val deduped = courses.distinctBy { "${it.courseName}_${it.dayOfWeek}_${it.startHour}_${it.startMinute}_${it.endHour}_${it.endMinute}" }
 
-        // Semester start = earliest DTSTART
-        val semesterStart = allStartDates.minOrNull() ?: ""
+        // Semester start = earliest DTSTART, rolled back to Monday of that week
+        val semesterStart = allStartDates.minOrNull()?.let { earliest ->
+            try {
+                val date = dateFormat.parse(earliest)!!
+                val cal = Calendar.getInstance().apply {
+                    time = date
+                    while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+                        add(Calendar.DAY_OF_YEAR, -1)
+                    }
+                }
+                dateFormat.format(cal.time)
+            } catch (_: Exception) { earliest }
+        } ?: ""
 
         return IcsParseResult(deduped, semesterStart, warnings)
     }
@@ -143,6 +159,7 @@ object IcsParser {
         val endMinute: Int,
         val dayOfWeek: Int,
         val untilDate: String,
+        val isRecurring: Boolean,
         val exDates: Set<String>
     )
 
@@ -208,6 +225,7 @@ object IcsParser {
             endMinute = endMinute,
             dayOfWeek = dayOfWeek,
             untilDate = untilDate,
+            isRecurring = rrule.isNotEmpty(),
             exDates = exDates
         )
     }

@@ -342,32 +342,23 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
-            // 弹出日期选择器让用户选择学期起始日
-            val cal = Calendar.getInstance()
-            android.app.DatePickerDialog(
-                this,
-                { _, year, month, dayOfMonth ->
-                    val startDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
-                    CourseScheduleRepository.replaceAllCourses(this, result.courses)
-                    CourseScheduleRepository.setSemesterStartDate(this, startDate)
-                    CourseScheduler.rescheduleAll(this)
-                    refreshCourseList()
-
-                    val msg = buildString {
-                        append("已导入 ${result.courses.size} 个课程")
-                        if (result.warnings.isNotEmpty()) {
-                            append("\n注意: ${result.warnings.joinToString("; ")}")
-                        }
-                    }
-                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-                },
-                cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH),
-                cal.get(Calendar.DAY_OF_MONTH)
-            ).apply {
-                setTitle("选择学期起始日（第一周周一）")
-                show()
+            CourseScheduleRepository.replaceAllCourses(this, result.courses)
+            if (result.semesterStartDate.isNotEmpty()) {
+                CourseScheduleRepository.setSemesterStartDate(this, result.semesterStartDate)
             }
+            CourseScheduler.rescheduleAll(this)
+            refreshCourseList()
+
+            val msg = buildString {
+                append("已导入 ${result.courses.size} 个课程")
+                if (result.semesterStartDate.isNotEmpty()) {
+                    append("，学期起始: ${result.semesterStartDate}")
+                }
+                if (result.warnings.isNotEmpty()) {
+                    append("\n注意: ${result.warnings.joinToString("; ")}")
+                }
+            }
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(this, "导入失败: ${e.message}", Toast.LENGTH_LONG).show()
         }
