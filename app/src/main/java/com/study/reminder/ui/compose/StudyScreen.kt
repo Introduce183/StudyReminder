@@ -1,6 +1,8 @@
 package com.study.reminder.ui.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,12 +27,19 @@ import kotlinx.coroutines.delay
 fun StudyScreen() {
     val context = LocalContext.current
 
-    var weekStats by remember { mutableStateOf(StudyStatsRepository.getWeekStats(context)) }
-    var monthStats by remember { mutableStateOf(StudyStatsRepository.getMonthStats(context)) }
     var selectedTab by remember { mutableStateOf(0) } // 0=周, 1=月
+    var weekOffset by remember { mutableIntStateOf(0) }
+    var monthOffset by remember { mutableIntStateOf(0) }
     var isStudying by remember { mutableStateOf(StudyStatsRepository.hasActiveSession(context)) }
     var isInSlot by remember { mutableStateOf(StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0) }
     var elapsedSeconds by remember { mutableStateOf(0) }
+
+    val weekStats = remember(weekOffset) { StudyStatsRepository.getWeekStats(context, weekOffset) }
+    val prevWeekStats = remember(weekOffset) { StudyStatsRepository.getWeekStats(context, weekOffset - 1) }
+    val monthStats = remember(monthOffset) { StudyStatsRepository.getMonthStats(context, monthOffset) }
+    val prevMonthStats = remember(monthOffset) { StudyStatsRepository.getMonthStats(context, monthOffset - 1) }
+    val weekDateRange = remember(weekOffset) { StudyStatsRepository.getWeekDateRange(weekOffset) }
+    val monthLabel = remember(monthOffset) { StudyStatsRepository.getMonthLabel(monthOffset) }
 
     // 计算已学习秒数（自动刷新）
     LaunchedEffect(isStudying) {
@@ -48,17 +57,14 @@ fun StudyScreen() {
         }
     }
 
-    // 刷新数据
     fun refresh() {
-        weekStats = StudyStatsRepository.getWeekStats(context)
-        monthStats = StudyStatsRepository.getMonthStats(context)
         isStudying = StudyStatsRepository.hasActiveSession(context)
         isInSlot = StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0
     }
 
     fun startManualSession() {
         val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(context)
-        val duration = if (remaining > 0) remaining else 24 * 60 // 不在时间段内默认24小时
+        val duration = if (remaining > 0) remaining else 24 * 60
         StudyStatsRepository.startSession(context, -1L)
         val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
             action = TimerService.ACTION_START
@@ -70,7 +76,6 @@ fun StudyScreen() {
 
     fun endStudySession() {
         StudyStatsRepository.endSession(context)
-        // 停止 TimerService
         val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
             action = TimerService.ACTION_STOP
         }
@@ -82,8 +87,10 @@ fun StudyScreen() {
 
     val todayStats = remember(weekStats) { StudyStatsRepository.getTodayStats(context) }
     val weekTotal = remember(weekStats) { weekStats.sumOf { it.totalMinutes } }
+    val prevWeekTotal = remember(prevWeekStats) { prevWeekStats.sumOf { it.totalMinutes } }
     val weekDistraction = remember(weekStats) { weekStats.sumOf { it.distractionCount } }
     val monthTotal = remember(monthStats) { monthStats.sumOf { it.totalMinutes } }
+    val prevMonthTotal = remember(prevMonthStats) { prevMonthStats.sumOf { it.totalMinutes } }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -193,7 +200,16 @@ fun StudyScreen() {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     if (selectedTab == 0) {
-                        // 周汇总
+                        // 周导航
+                        PeriodNavigator(
+                            label = "${weekDateRange.first} ~ ${weekDateRange.second}",
+                            canGoNext = weekOffset < 0,
+                            onPrev = { weekOffset-- },
+                            onNext = { if (weekOffset < 0) weekOffset++ }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 周汇总 + 对比
                         Row(modifier = Modifier.fillMaxWidth()) {
                             StatCard(
                                 label = "周总时长",
@@ -209,6 +225,10 @@ fun StudyScreen() {
                                 modifier = Modifier.weight(1f)
                             )
                         }
+                        if (weekOffset < 0) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ComparisonText(current = weekTotal, previous = prevWeekTotal, period = "周")
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         BarChart(
                             data = weekStats.map { it.totalMinutes },
@@ -216,23 +236,133 @@ fun StudyScreen() {
                             maxValue = (weekStats.maxOfOrNull { it.totalMinutes } ?: 60).coerceAtLeast(30)
                         )
                     } else {
-                        // 月汇总
-                        StatCard(
-                            label = "月总时长",
-                            value = formatMinutes(monthTotal),
-                            color = Color(0xFF39C5BB),
-                            modifier = Modifier.fillMaxWidth()
+                        // 月导航
+                        PeriodNavigator(
+                            label = monthLabel,
+                            canGoNext = monthOffset < 0,
+                            onPrev = { monthOffset-- },
+                            onNext = { if (monthOffset < 0) monthOffset++ }
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 月汇总 + 对比
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            StatCard(
+                                label = "月总时长",
+                                value = formatMinutes(monthTotal),
+                                color = Color(0xFF39C5BB),
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            ComparisonCard(
+                                current = monthTotal,
+                                previous = prevMonthTotal,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
-                        BarChart(
+                        ScrollableBarChart(
                             data = monthStats.map { it.totalMinutes },
                             labels = monthStats.map { it.label },
-                            maxValue = (monthStats.maxOfOrNull { it.totalMinutes } ?: 60).coerceAtLeast(30),
-                            showEveryNLabel = 5
+                            maxValue = (monthStats.maxOfOrNull { it.totalMinutes } ?: 60).coerceAtLeast(30)
                         )
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PeriodNavigator(
+    label: String,
+    canGoNext: Boolean,
+    onPrev: () -> Unit,
+    onNext: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "◀",
+            fontSize = 16.sp,
+            color = Color(0xFF39C5BB),
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .clickable { onPrev() }
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF10393F),
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+        Text(
+            text = "▶",
+            fontSize = 16.sp,
+            color = if (canGoNext) Color(0xFF39C5BB) else Color(0x44000000),
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .then(if (canGoNext) Modifier.clickable { onNext() } else Modifier)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun ComparisonText(current: Int, previous: Int, period: String) {
+    val diff = current - previous
+    if (previous == 0 && current == 0) return
+    val text = if (diff > 0) {
+        "比上${period}多学了 ${formatMinutes(diff)}"
+    } else if (diff < 0) {
+        "比上${period}少学了 ${formatMinutes(-diff)}"
+    } else {
+        "与上${period}持平"
+    }
+    val color = if (diff > 0) Color(0xFF39C5BB) else if (diff < 0) Color(0xFFFF77B7) else Color(0xFF4E7F84)
+    Text(
+        text = text,
+        fontSize = 12.sp,
+        color = color,
+        fontWeight = FontWeight.Medium,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+private fun ComparisonCard(current: Int, previous: Int, modifier: Modifier = Modifier) {
+    val diff = current - previous
+    val text = if (diff > 0) "+${formatMinutes(diff)}" else if (diff < 0) formatMinutes(diff) else "0"
+    val label = if (previous > 0) "较上月" else "较上月"
+    val color = if (diff > 0) Color(0xFF39C5BB) else if (diff < 0) Color(0xFFFF77B7) else Color(0xFF4E7F84)
+
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = Color(0xDDF9F4),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = text,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                color = Color(0xFF4E7F84)
+            )
         }
     }
 }
@@ -291,8 +421,7 @@ private fun TabButton(text: String, selected: Boolean, onClick: () -> Unit) {
 private fun BarChart(
     data: List<Int>,
     labels: List<String>,
-    maxValue: Int,
-    showEveryNLabel: Int = 1
+    maxValue: Int
 ) {
     val barColor = Color(0xFF39C5BB)
     val barBg = Color(0x2239C5BB)
@@ -306,21 +435,19 @@ private fun BarChart(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Bottom
         ) {
-            data.forEachIndexed { index, value ->
+            data.forEachIndexed { _, value ->
                 Column(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 数值标签
                     if (value > 0) {
                         Text(
-                            text = "${value}",
+                            text = "$value",
                             fontSize = 9.sp,
                             color = Color(0xFF4E7F84),
                             modifier = Modifier.padding(bottom = 2.dp)
                         )
                     }
-                    // 柱子
                     val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
                     Box(
                         modifier = Modifier
@@ -340,17 +467,95 @@ private fun BarChart(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            labels.forEachIndexed { index, label ->
-                if (showEveryNLabel > 1 && (index + 1) % showEveryNLabel != 0 && index != 0) {
-                    Spacer(modifier = Modifier.weight(1f))
-                } else {
-                    Text(
-                        text = label,
-                        fontSize = 10.sp,
-                        color = Color(0xFF4E7F84),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
-                    )
+            labels.forEach { label ->
+                Text(
+                    text = label,
+                    fontSize = 10.sp,
+                    color = Color(0xFF4E7F84),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScrollableBarChart(
+    data: List<Int>,
+    labels: List<String>,
+    maxValue: Int
+) {
+    val barColor = Color(0xFF39C5BB)
+    val barBg = Color(0x2239C5BB)
+    val barWidth = 20.dp
+    val barSpacing = 6.dp
+    val totalWidth = (barWidth + barSpacing) * data.size
+
+    Column {
+        // Scrollable bar area
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+        ) {
+            // Bars
+            Row(
+                modifier = Modifier.width(totalWidth).height(120.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                data.forEachIndexed { _, value ->
+                    Column(
+                        modifier = Modifier.width(barWidth),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (value > 0) {
+                            Text(
+                                text = "$value",
+                                fontSize = 9.sp,
+                                color = Color(0xFF4E7F84),
+                                modifier = Modifier.padding(bottom = 2.dp)
+                            )
+                        }
+                        val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
+                        Box(
+                            modifier = Modifier
+                                .width(14.dp)
+                                .fillMaxHeight(fraction.coerceAtLeast(0.02f))
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(if (value > 0) barColor else barBg)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Labels — show every 5th day + first
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+        ) {
+            Row(modifier = Modifier.width(totalWidth)) {
+                labels.forEachIndexed { index, label ->
+                    val dayNum = index + 1
+                    val show = dayNum == 1 || dayNum % 5 == 0 || dayNum == labels.size
+                    Box(
+                        modifier = Modifier.width(barWidth + barSpacing),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (show) {
+                            Text(
+                                text = label,
+                                fontSize = 9.sp,
+                                color = Color(0xFF4E7F84),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
         }

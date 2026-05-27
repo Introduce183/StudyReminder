@@ -199,11 +199,12 @@ object StudyStatsRepository {
         return DayStats(today, "今日", sessions.sumOf { it.durationMin }, distractions, sessions.size)
     }
 
-    fun getWeekStats(context: Context): List<DayStats> {
+    fun getWeekStats(context: Context, weekOffset: Int = 0): List<DayStats> {
         val cal = Calendar.getInstance()
         while (cal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
             cal.add(Calendar.DAY_OF_YEAR, -1)
         }
+        cal.add(Calendar.DAY_OF_YEAR, weekOffset * 7)
         val sessions = getSessions(context)
         val distractions = getDistractions(context)
         val dayNames = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
@@ -219,8 +220,21 @@ object StudyStatsRepository {
         return result
     }
 
-    fun getMonthStats(context: Context): List<DayStats> {
+    fun getWeekDateRange(weekOffset: Int = 0): Pair<String, String> {
         val cal = Calendar.getInstance()
+        while (cal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+            cal.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        cal.add(Calendar.DAY_OF_YEAR, weekOffset * 7)
+        val start = dateFormat.format(cal.time)
+        cal.add(Calendar.DAY_OF_YEAR, 6)
+        val end = dateFormat.format(cal.time)
+        return start to end
+    }
+
+    fun getMonthStats(context: Context, monthOffset: Int = 0): List<DayStats> {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.MONTH, monthOffset)
         val year = cal.get(Calendar.YEAR)
         val month = cal.get(Calendar.MONTH)
         cal.set(year, month, 1)
@@ -238,6 +252,12 @@ object StudyStatsRepository {
             result.add(DayStats(date, "$day", daySessions.sumOf { it.durationMin }, dayDistractions, daySessions.size))
         }
         return result
+    }
+
+    fun getMonthLabel(monthOffset: Int = 0): String {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.MONTH, monthOffset)
+        return "${cal.get(Calendar.YEAR)}年${cal.get(Calendar.MONTH) + 1}月"
     }
 }
 
