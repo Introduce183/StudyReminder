@@ -1,13 +1,16 @@
 package com.study.reminder.model
 
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicLong
+
+private val slotIdCounter = AtomicLong(System.nanoTime())
 
 /**
  * 固定学习时间段
  * 例如：周一到周五 10:00 ~ 11:30
  */
 data class StudySlot(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = slotIdCounter.getAndIncrement(),
     val label: String = "",          // 备注，如"上午自习"
     val startHour: Int,
     val startMinute: Int,

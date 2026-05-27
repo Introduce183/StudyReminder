@@ -153,15 +153,15 @@ class TimerService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        // 用户从最近任务列表划掉 app 时，立即保存学习会话
         if (StudyStatsRepository.hasActiveSession(this)) {
             StudyStatsRepository.endSession(this)
         }
+        NotificationHelper.cancelForeground(this)
         super.onTaskRemoved(rootIntent)
     }
 
     override fun onDestroy() {
-        // Service 被销毁时，确保学习会话已保存
+        NotificationHelper.cancelForeground(this)
         if (StudyStatsRepository.hasActiveSession(this)) {
             StudyStatsRepository.endSession(this)
         }

@@ -51,8 +51,14 @@ object AiHelper {
             conn.outputStream.write(body.toString().toByteArray(Charsets.UTF_8))
 
             val code = conn.responseCode
-            val text = if (code == 200) conn.inputStream.bufferedReader().readText()
-                       else { conn.disconnect(); return@withContext getDefaultTaunt(characterName) }
+            val text = if (code == 200) {
+                conn.inputStream.bufferedReader().readText()
+            } else {
+                val errBody = try { conn.errorStream?.bufferedReader()?.readText() } catch (_: Exception) { null }
+                android.util.Log.w("AiHelper", "HTTP $code: $errBody")
+                conn.disconnect()
+                return@withContext getDefaultTaunt(characterName)
+            }
             conn.disconnect()
 
             val content = JSONObject(text)
