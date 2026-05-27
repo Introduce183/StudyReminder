@@ -426,7 +426,7 @@ private fun BarChart(
     val barColor = Color(0xFF39C5BB)
     val barBg = Color(0x2239C5BB)
     val barHeight = 100.dp
-    val labelHeight = 14.dp
+    val labelHeight = 18.dp
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -502,7 +502,7 @@ private fun ScrollableBarChart(
     val barBg = Color(0x2239C5BB)
     val barWidth = 24.dp
     val barHeight = 100.dp
-    val valueLabelHeight = 14.dp
+    val valueLabelHeight = 18.dp
     val dayLabelHeight = 16.dp
     val scrollState = rememberScrollState()
 
