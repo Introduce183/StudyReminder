@@ -425,17 +425,16 @@ private fun BarChart(
 ) {
     val barColor = Color(0xFF39C5BB)
     val barBg = Color(0x2239C5BB)
+    val barHeight = 100.dp
 
     Column {
-        // 柱形图
+        // 柱形图 — bars + labels in one Row, each bar is a Column aligned to bottom
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Bottom
         ) {
-            data.forEachIndexed { _, value ->
+            data.forEachIndexed { index, value ->
                 Column(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -447,15 +446,35 @@ private fun BarChart(
                             color = Color(0xFF4E7F84),
                             modifier = Modifier.padding(bottom = 2.dp)
                         )
+                    } else {
+                        Spacer(modifier = Modifier.height(14.dp))
                     }
                     val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
                     Box(
                         modifier = Modifier
                             .width(16.dp)
-                            .fillMaxHeight(fraction.coerceAtLeast(0.02f))
-                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                            .background(if (value > 0) barColor else barBg)
-                    )
+                            .height(barHeight)
+                    ) {
+                        // Background track
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(barBg)
+                        )
+                        // Colored fill from bottom
+                        if (value > 0) {
+                            val fillHeight = barHeight * fraction
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(fillHeight)
+                                    .align(Alignment.BottomCenter)
+                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                    .background(barColor)
+                            )
+                        }
+                    }
                 }
             }
         }
