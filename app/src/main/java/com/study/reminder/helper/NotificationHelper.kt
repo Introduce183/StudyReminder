@@ -226,6 +226,8 @@ object NotificationHelper {
         alertHandler?.removeCallbacksAndMessages(null)
         alertHandler = null
         alertRunnable = null
+        cachedMainPendingIntent = null
+        cachedStopPendingIntent = null
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(ALERT_ID)
         nm.cancel(FOREGROUND_ID)

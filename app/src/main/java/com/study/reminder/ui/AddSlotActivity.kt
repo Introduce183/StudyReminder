@@ -211,7 +211,7 @@ private fun AddSlotScreen(
 
                     onConfirm(
                         StudySlot(
-                            id = initialSlot?.id ?: System.currentTimeMillis(),
+                            id = initialSlot?.id ?: 0L, // 0 triggers AtomicLong default
                             label = label.trim().ifEmpty { "学习时间" },
                             startHour = sH, startMinute = sM,
                             endHour = eH, endMinute = eM,

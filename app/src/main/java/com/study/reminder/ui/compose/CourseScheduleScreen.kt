@@ -160,9 +160,8 @@ fun CourseScheduleScreen(
                 }
 
                 // Filter courses for selected week
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val weekCourses = remember(courses, displayWeek, semesterStartDate) {
-                    filterCoursesForWeek(courses, displayWeek, semesterStartDate, dateFormat)
+                    filterCoursesForWeek(courses, displayWeek, semesterStartDate, dateFormatTL.get()!!)
                 }
 
                 // Timetable grid
@@ -388,8 +387,10 @@ private fun TimetableGrid(
 
 // ── Helpers ────────────────────────────────────────────────────
 
+private val dateFormatTL = java.lang.ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+
 private fun getWeekDates(weekNum: Int, semesterStart: String): List<String> {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val dateFormat = dateFormatTL.get()!!
     return try {
         val start = dateFormat.parse(semesterStart)!!
         val cal = Calendar.getInstance().apply {
@@ -408,7 +409,7 @@ private fun getWeekDates(weekNum: Int, semesterStart: String): List<String> {
 }
 
 private fun calculateTotalWeeks(courses: List<CourseSchedule>, semesterStart: String): Int {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val dateFormat = dateFormatTL.get()!!
 
     // Find the latest end date across all courses
     var maxDate = ""

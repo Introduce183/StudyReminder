@@ -14,7 +14,8 @@ import java.util.*
 object CourseScheduler {
 
     private const val PREF_SCHEDULED_COURSE_IDS = "scheduled_course_ids"
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val dateFormatTL = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    private val dateFormat: SimpleDateFormat get() = dateFormatTL.get()!!
 
     fun rescheduleAll(context: Context) {
         val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

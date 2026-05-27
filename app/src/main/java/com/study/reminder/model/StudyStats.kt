@@ -53,7 +53,12 @@ object StudyStatsRepository {
     private const val PREF_DISTRACTIONS = "distraction_events"
     private const val PREF_ACTIVE_START = "active_session_start"
     private const val PREF_ACTIVE_SLOT_ID = "active_slot_id"
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val dateFormatTL = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    private val dateFormat: SimpleDateFormat get() = dateFormatTL.get()!!
+
+    // In-memory cache to avoid repeated JSON parsing
+    @Volatile private var cachedSessions: List<StudySession>? = null
+    @Volatile private var cachedDistractions: List<DistractionEvent>? = null
 
     // ── 会话管理 ──────────────────────────────────────────────
 
@@ -153,6 +158,7 @@ object StudyStatsRepository {
     // ── 数据读写 ──────────────────────────────────────────────
 
     private fun getSessions(context: Context): List<StudySession> {
+        cachedSessions?.let { return it }
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
         val json = prefs.getString(PREF_SESSIONS, "[]") ?: "[]"
         return try {
@@ -161,7 +167,7 @@ object StudyStatsRepository {
         } catch (e: Exception) {
             Log.w("StudyStats", "Failed to parse sessions JSON, resetting", e)
             emptyList()
-        }
+        }.also { cachedSessions = it }
     }
 
     private fun saveSessions(context: Context, sessions: List<StudySession>) {
@@ -169,9 +175,11 @@ object StudyStatsRepository {
         sessions.forEach { arr.put(it.toJson()) }
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().putString(PREF_SESSIONS, arr.toString()).apply()
+        cachedSessions = sessions
     }
 
     private fun getDistractions(context: Context): List<DistractionEvent> {
+        cachedDistractions?.let { return it }
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
         val json = prefs.getString(PREF_DISTRACTIONS, "[]") ?: "[]"
         return try {
@@ -180,7 +188,7 @@ object StudyStatsRepository {
         } catch (e: Exception) {
             Log.w("StudyStats", "Failed to parse distractions JSON, resetting", e)
             emptyList()
-        }
+        }.also { cachedDistractions = it }
     }
 
     private fun saveDistractions(context: Context, events: List<DistractionEvent>) {
@@ -188,6 +196,7 @@ object StudyStatsRepository {
         events.forEach { arr.put(it.toJson()) }
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().putString(PREF_DISTRACTIONS, arr.toString()).apply()
+        cachedDistractions = events
     }
 
     // ── 统计查询 ──────────────────────────────────────────────
