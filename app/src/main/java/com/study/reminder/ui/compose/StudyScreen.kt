@@ -525,23 +525,33 @@ private fun ScrollableBarChart(
                     } else {
                         Spacer(modifier = Modifier.height(12.dp))
                     }
-                    // Bar
+                    // Bar — draw background + foreground in a single Box
+                    val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
+                    val barHeight = 100.dp
                     Box(
                         modifier = Modifier
                             .width(14.dp)
-                            .height(100.dp)
-                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                            .background(barBg)
+                            .height(barHeight)
                     ) {
-                        val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
+                        // Background track
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(fraction)
-                                .align(Alignment.BottomCenter)
+                                .fillMaxSize()
                                 .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                .background(if (value > 0) barColor else Color.Transparent)
+                                .background(barBg)
                         )
+                        // Colored fill from bottom
+                        if (value > 0) {
+                            val fillHeight = barHeight * fraction
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(fillHeight)
+                                    .align(Alignment.BottomCenter)
+                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                    .background(barColor)
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     // Day label — always show, every day
