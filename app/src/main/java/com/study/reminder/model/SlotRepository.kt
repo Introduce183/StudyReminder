@@ -1,6 +1,7 @@
 package com.study.reminder.model
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 
 object SlotRepository {
@@ -13,7 +14,7 @@ object SlotRepository {
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { StudySlot.fromJson(arr.getJSONObject(it)) }.toMutableList()
-        } catch (e: Exception) { mutableListOf() }
+        } catch (e: Exception) { Log.w("SlotRepository", "Failed to parse slots", e); mutableListOf() }
     }
 
     fun saveSlots(context: Context, slots: List<StudySlot>) {

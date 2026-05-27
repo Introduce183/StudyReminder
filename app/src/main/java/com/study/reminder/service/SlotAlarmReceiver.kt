@@ -26,6 +26,7 @@ class SlotAlarmReceiver : BroadcastReceiver() {
         val slotId = intent.getLongExtra(EXTRA_SLOT_ID, -1L)
         val slots = SlotRepository.getSlots(context)
         val slot = slots.find { it.id == slotId } ?: return
+        if (!slot.enabled) return
 
         // 发送提醒通知
         val message = "学习时间段「${slot.label.ifEmpty { "${slot.startLabel} - ${slot.endLabel}" }}」到了！"

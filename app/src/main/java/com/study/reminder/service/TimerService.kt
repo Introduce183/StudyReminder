@@ -51,9 +51,13 @@ class TimerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         val prefs = getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
 
-        when (intent?.action) {
+        when (intent.action) {
             ACTION_START -> {
                 val minutes = intent.getIntExtra(EXTRA_DURATION_MINUTES, 25)
                 startTimer(minutes, prefs)
@@ -127,7 +131,7 @@ class TimerService : Service() {
             )
         }
 
-        stopForeground(STOP_FOREGROUND_DETACH)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 

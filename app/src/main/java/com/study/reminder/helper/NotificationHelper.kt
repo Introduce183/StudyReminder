@@ -56,62 +56,55 @@ object NotificationHelper {
 
     private const val REQUEST_STOP = 9001
 
+    private var cachedMainPendingIntent: PendingIntent? = null
+    private var cachedStopPendingIntent: PendingIntent? = null
+
+    private fun getMainPendingIntent(context: Context): PendingIntent {
+        return cachedMainPendingIntent ?: PendingIntent.getActivity(
+            context,
+            REQUEST_MAIN,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        ).also { cachedMainPendingIntent = it }
+    }
+
+    private fun getStopPendingIntent(context: Context): PendingIntent {
+        return cachedStopPendingIntent ?: PendingIntent.getService(
+            context,
+            REQUEST_STOP,
+            Intent(context, com.study.reminder.service.TimerService::class.java).apply {
+                action = com.study.reminder.service.TimerService.ACTION_STOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        ).also { cachedStopPendingIntent = it }
+    }
+
     fun buildForegroundNotification(context: Context, remainingSeconds: Int): Notification {
         val h = remainingSeconds / 3600
         val m = (remainingSeconds % 3600) / 60
         val s = remainingSeconds % 60
         val timeStr = String.format("%02d:%02d:%02d", h, m, s)
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            REQUEST_MAIN,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val stopIntent = PendingIntent.getService(
-            context,
-            REQUEST_STOP,
-            Intent(context, com.study.reminder.service.TimerService::class.java).apply {
-                action = com.study.reminder.service.TimerService.ACTION_STOP
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
         return NotificationCompat.Builder(context, CHANNEL_FOREGROUND)
             .setSmallIcon(R.drawable.ic_timer)
             .setContentTitle("Study timer running")
             .setContentText("Remaining: $timeStr")
             .setOngoing(true)
-            .setContentIntent(pendingIntent)
-            .addAction(0, "Stop", stopIntent)
+            .setContentIntent(getMainPendingIntent(context))
+            .addAction(0, "Stop", getStopPendingIntent(context))
             .setSilent(true)
             .build()
     }
 
     fun updateForegroundNotification(context: Context, timeStr: String) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            REQUEST_MAIN,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val stopIntent = PendingIntent.getService(
-            context,
-            REQUEST_STOP,
-            Intent(context, com.study.reminder.service.TimerService::class.java).apply {
-                action = com.study.reminder.service.TimerService.ACTION_STOP
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
         val notification = NotificationCompat.Builder(context, CHANNEL_FOREGROUND)
             .setSmallIcon(R.drawable.ic_timer)
             .setContentTitle("Study timer running")
             .setContentText("Remaining: $timeStr")
             .setOngoing(true)
-            .setContentIntent(pendingIntent)
-            .addAction(0, "Stop", stopIntent)
+            .setContentIntent(getMainPendingIntent(context))
+            .addAction(0, "Stop", getStopPendingIntent(context))
             .setSilent(true)
             .build()
         nm.notify(FOREGROUND_ID, notification)

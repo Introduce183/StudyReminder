@@ -1,6 +1,7 @@
 package com.study.reminder.model
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import java.text.SimpleDateFormat
 import java.util.*
@@ -9,7 +10,7 @@ object CourseScheduleRepository {
 
     private const val PREF_COURSES = "course_schedules"
     private const val PREF_SEMESTER_START = "semester_start_date"
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val dateFormatTL = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
     // ── 课程数据读写 ─────────────────────────────────────────
 
@@ -19,7 +20,7 @@ object CourseScheduleRepository {
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { CourseSchedule.fromJson(arr.getJSONObject(it)) }
-        } catch (_: Exception) { emptyList() }
+        } catch (e: Exception) { Log.w("CourseScheduleRepo", "Failed to parse courses", e); emptyList() }
     }
 
     fun saveCourses(context: Context, courses: List<CourseSchedule>) {
@@ -81,8 +82,9 @@ object CourseScheduleRepository {
         val start = getSemesterStartDate(context)
         if (start.isEmpty()) return 0
         return try {
+            val df = dateFormatTL.get()!!
             val startCal = Calendar.getInstance().apply {
-                time = dateFormat.parse(start)!!
+                time = df.parse(start)!!
                 while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
                     add(Calendar.DAY_OF_YEAR, -1)
                 }
@@ -100,11 +102,12 @@ object CourseScheduleRepository {
         return getCourses(context).filter { isCourseActiveNow(context, it) }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun isCourseActiveNow(context: Context, course: CourseSchedule): Boolean {
         if (!course.enabled) return false
 
         val now = Calendar.getInstance()
-        val today = dateFormat.format(now.time)
+        val today = dateFormatTL.get()!!.format(now.time)
         val dow = adjustedDayOfWeek(now)
         if (dow != course.dayOfWeek) return false
 

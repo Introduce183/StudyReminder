@@ -29,8 +29,17 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         // 检查课程是否仍然有效
         if (!course.enabled) return
 
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val now = Calendar.getInstance()
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now.time)
         if (today in course.exDates) return
+
+        // 检查今天是否是课程的星期
+        val dow = when (now.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> 1; Calendar.TUESDAY -> 2; Calendar.WEDNESDAY -> 3
+            Calendar.THURSDAY -> 4; Calendar.FRIDAY -> 5; Calendar.SATURDAY -> 6
+            Calendar.SUNDAY -> 7; else -> 0
+        }
+        if (dow != course.dayOfWeek) return
 
         // 检查 weekRanges
         if (course.weekRanges.isNotEmpty()) {

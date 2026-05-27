@@ -12,10 +12,11 @@ data class IcsParseResult(
 
 object IcsParser {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    private val icsDateOnlyFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+    private val dateFormatTL = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    private val icsDateOnlyFormatTL = ThreadLocal.withInitial { SimpleDateFormat("yyyyMMdd", Locale.getDefault()) }
 
     fun parseIcs(content: String): IcsParseResult {
+        val df = dateFormatTL.get()!!
         val warnings = mutableListOf<String>()
         val allStartDates = mutableListOf<String>()
 
@@ -50,19 +51,34 @@ object IcsParser {
 
             val isRecurring = evts.any { it.isRecurring }
 
+            val maxInterval = evts.maxOfOrNull { it.interval } ?: 1
+
             for (ev in evts) {
                 allExDates.addAll(ev.exDates)
                 if (!isRecurring) {
                     // Single event: only active on its exact date
                     weekRanges.add(listOf(ev.startDate, ev.startDate))
-                } else if (ev.untilDate.isNotEmpty()) {
-                    // UNTIL is the date of the last occurrence (Monday of last week)
-                    // Extend by 6 days to cover the full final week (Mon-Sun)
-                    weekRanges.add(listOf(ev.startDate, addDays(ev.untilDate, 6)))
                 } else {
-                    // No UNTIL = default to 20 weeks from start
-                    val endDate = addWeeks(ev.startDate, 20)
-                    weekRanges.add(listOf(ev.startDate, endDate))
+                    val effectiveEnd = if (ev.untilDate.isNotEmpty()) {
+                        addDays(ev.untilDate, 6)
+                    } else {
+                        addWeeks(ev.startDate, 20)
+                    }
+                    if (maxInterval >= 2) {
+                        // Biweekly or higher interval: generate individual active weeks
+                        var weekStart = ev.startDate
+                        while (weekStart <= effectiveEnd) {
+                            val weekEnd = addDays(weekStart, 6)
+                            if (weekEnd > effectiveEnd) {
+                                weekRanges.add(listOf(weekStart, effectiveEnd))
+                            } else {
+                                weekRanges.add(listOf(weekStart, weekEnd))
+                            }
+                            weekStart = addWeeks(weekStart, maxInterval)
+                        }
+                    } else {
+                        weekRanges.add(listOf(ev.startDate, effectiveEnd))
+                    }
                 }
             }
 
@@ -93,14 +109,14 @@ object IcsParser {
         // Semester start = earliest DTSTART, rolled back to Monday of that week
         val semesterStart = allStartDates.minOrNull()?.let { earliest ->
             try {
-                val date = dateFormat.parse(earliest)!!
+                val date = df.parse(earliest)!!
                 val cal = Calendar.getInstance().apply {
                     time = date
                     while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
                         add(Calendar.DAY_OF_YEAR, -1)
                     }
                 }
-                dateFormat.format(cal.time)
+                df.format(cal.time)
             } catch (_: Exception) { earliest }
         } ?: ""
 
@@ -160,6 +176,7 @@ object IcsParser {
         val dayOfWeek: Int,
         val untilDate: String,
         val isRecurring: Boolean,
+        val interval: Int,
         val exDates: Set<String>
     )
 
@@ -195,11 +212,12 @@ object IcsParser {
         val (_, endHour, endMinute) = if (dtEnd.isNotEmpty()) parseDateTime(dtEnd)
             else Triple(startDate, startHour + 1, startMinute)
 
-        // Parse RRULE for UNTIL and BYDAY
+        // Parse RRULE for UNTIL, BYDAY, and INTERVAL
         val rruleMap = parseRRule(rrule)
         val untilStr = rruleMap["UNTIL"] ?: ""
         val untilDate = extractDate(untilStr)
         val byDayStr = rruleMap["BYDAY"] ?: ""
+        val interval = rruleMap["INTERVAL"]?.toIntOrNull() ?: 1
 
         // Determine dayOfWeek: prefer RRULE BYDAY, fallback to DTSTART
         val dayOfWeek = if (byDayStr.isNotEmpty()) {
@@ -226,6 +244,7 @@ object IcsParser {
             dayOfWeek = dayOfWeek,
             untilDate = untilDate,
             isRecurring = rrule.isNotEmpty(),
+            interval = interval,
             exDates = exDates
         )
     }
@@ -233,7 +252,8 @@ object IcsParser {
     // ── Date/time parsing ──────────────────────────────────────
 
     private fun parseDateTime(value: String): Triple<String, Int, Int> {
-        // Supports: TZID=Asia/Shanghai:20250902T080000, 20250902T080000Z, 20250902T080000, 20250902
+        val df = dateFormatTL.get()!!
+        val idf = icsDateOnlyFormatTL.get()!!
         val cleanValue = value.substringAfter(":")
 
         return try {
@@ -241,14 +261,14 @@ object IcsParser {
                 cleanValue.contains("T") -> {
                     val dateStr = cleanValue.substringBefore("T")
                     val timeStr = cleanValue.substringAfter("T").removeSuffix("Z").take(6)
-                    val date = icsDateOnlyFormat.parse(dateStr)
+                    val date = idf.parse(dateStr)
                     val hour = timeStr.substring(0, 2).toInt()
                     val minute = timeStr.substring(2, 4).toInt()
-                    Triple(dateFormat.format(date!!), hour, minute)
+                    Triple(df.format(date!!), hour, minute)
                 }
                 cleanValue.length == 8 -> {
-                    val date = icsDateOnlyFormat.parse(cleanValue)
-                    Triple(dateFormat.format(date!!), 0, 0)
+                    val date = idf.parse(cleanValue)
+                    Triple(df.format(date!!), 0, 0)
                 }
                 else -> Triple("", 0, 0)
             }
@@ -257,17 +277,20 @@ object IcsParser {
 
     private fun extractDate(value: String): String {
         if (value.isEmpty()) return ""
+        val df = dateFormatTL.get()!!
+        val idf = icsDateOnlyFormatTL.get()!!
         val cleanValue = value.substringAfter(":")
         val dateStr = cleanValue.substringBefore("T").take(8)
         return try {
-            val date = icsDateOnlyFormat.parse(dateStr)
-            dateFormat.format(date!!)
+            val date = idf.parse(dateStr)
+            df.format(date!!)
         } catch (_: Exception) { "" }
     }
 
     private fun dayOfWeekFromDateString(dateStr: String): Int {
         return try {
-            val date = dateFormat.parse(dateStr)!!
+            val df = dateFormatTL.get()!!
+            val date = df.parse(dateStr)!!
             val cal = Calendar.getInstance().apply { time = date }
             when (cal.get(Calendar.DAY_OF_WEEK)) {
                 Calendar.MONDAY -> 1; Calendar.TUESDAY -> 2; Calendar.WEDNESDAY -> 3
@@ -324,12 +347,13 @@ object IcsParser {
 
     private fun addDays(dateStr: String, days: Int): String {
         return try {
-            val date = dateFormat.parse(dateStr)!!
+            val df = dateFormatTL.get()!!
+            val date = df.parse(dateStr)!!
             val cal = Calendar.getInstance().apply {
                 time = date
                 add(Calendar.DAY_OF_YEAR, days)
             }
-            dateFormat.format(cal.time)
+            df.format(cal.time)
         } catch (_: Exception) { dateStr }
     }
 }

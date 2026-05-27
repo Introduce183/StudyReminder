@@ -24,6 +24,9 @@ class ScreenAccessibilityService : AccessibilityService() {
     }
 
     private val launcherPkgs = mutableSetOf<String>()
+    private var cachedWhitelist: Set<String>? = null
+    private var whitelistCacheTime: Long = 0L
+    private val WHITELIST_CACHE_TTL = 60_000L
 
     override fun onServiceConnected() {
         serviceInfo = AccessibilityServiceInfo().apply {
@@ -58,9 +61,18 @@ class ScreenAccessibilityService : AccessibilityService() {
         checkAndRemind(pkg)
     }
 
+    private fun isWhitelistedCached(pkg: String): Boolean {
+        val now = System.currentTimeMillis()
+        if (cachedWhitelist == null || now - whitelistCacheTime > WHITELIST_CACHE_TTL) {
+            cachedWhitelist = WhitelistManager.getWhitelist(this)
+            whitelistCacheTime = now
+        }
+        return pkg in cachedWhitelist!!
+    }
+
     private fun checkAndRemind(pkg: String) {
         if (!isInStudyTime()) return
-        if (WhitelistManager.isWhitelisted(this, pkg)) return
+        if (isWhitelistedCached(pkg)) return
         val now = System.currentTimeMillis()
         if (pkg == lastReminderPkg && now - lastReminderTime < COOLDOWN_MS) return
 

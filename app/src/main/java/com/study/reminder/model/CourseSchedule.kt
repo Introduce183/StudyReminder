@@ -2,9 +2,12 @@ package com.study.reminder.model
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicLong
+
+private val courseIdCounter = AtomicLong(System.nanoTime())
 
 data class CourseSchedule(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = courseIdCounter.getAndIncrement(),
     val courseName: String,
     val location: String = "",
     val startHour: Int,
