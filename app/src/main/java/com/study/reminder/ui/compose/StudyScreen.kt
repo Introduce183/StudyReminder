@@ -488,74 +488,71 @@ private fun ScrollableBarChart(
 ) {
     val barColor = Color(0xFF39C5BB)
     val barBg = Color(0x2239C5BB)
-    val barWidth = 20.dp
-    val barSpacing = 6.dp
-    val totalWidth = (barWidth + barSpacing) * data.size
+    val barWidth = 24.dp
+    val totalWidth = barWidth * data.size
+    val scrollState = rememberScrollState()
+
+    // Auto-scroll to current day (today) on first composition
+    val today = remember { java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_MONTH) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    LaunchedEffect(data.size) {
+        if (today > 2) {
+            val targetPx = with(density) { (barWidth * (today - 2)).toPx() }
+            scrollState.scrollTo(targetPx.toInt().coerceIn(0, scrollState.maxValue))
+        }
+    }
 
     Column {
-        // Scrollable bar area
+        // Bars + labels in a single scrollable column — always aligned
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
+                .horizontalScroll(scrollState)
         ) {
-            // Bars
-            Row(
-                modifier = Modifier.width(totalWidth).height(120.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                data.forEachIndexed { _, value ->
-                    Column(
-                        modifier = Modifier.width(barWidth),
-                        horizontalAlignment = Alignment.CenterHorizontally
+            data.forEachIndexed { index, value ->
+                Column(
+                    modifier = Modifier.width(barWidth),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Value label above bar
+                    if (value > 0) {
+                        Text(
+                            text = "$value",
+                            fontSize = 9.sp,
+                            color = Color(0xFF4E7F84),
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    // Bar
+                    Box(
+                        modifier = Modifier
+                            .width(14.dp)
+                            .height(100.dp)
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(barBg)
                     ) {
-                        if (value > 0) {
-                            Text(
-                                text = "$value",
-                                fontSize = 9.sp,
-                                color = Color(0xFF4E7F84),
-                                modifier = Modifier.padding(bottom = 2.dp)
-                            )
-                        }
                         val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
                         Box(
                             modifier = Modifier
-                                .width(14.dp)
-                                .fillMaxHeight(fraction.coerceAtLeast(0.02f))
+                                .fillMaxWidth()
+                                .fillMaxHeight(fraction)
+                                .align(Alignment.BottomCenter)
                                 .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                .background(if (value > 0) barColor else barBg)
+                                .background(if (value > 0) barColor else Color.Transparent)
                         )
                     }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // Labels — show every 5th day + first
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-        ) {
-            Row(modifier = Modifier.width(totalWidth)) {
-                labels.forEachIndexed { index, label ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Day label — always show, every day
                     val dayNum = index + 1
-                    val show = dayNum == 1 || dayNum % 5 == 0 || dayNum == labels.size
-                    Box(
-                        modifier = Modifier.width(barWidth + barSpacing),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (show) {
-                            Text(
-                                text = label,
-                                fontSize = 9.sp,
-                                color = Color(0xFF4E7F84),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                    Text(
+                        text = "$dayNum",
+                        fontSize = 8.sp,
+                        color = if (dayNum == today) Color(0xFF39C5BB) else Color(0xFF4E7F84),
+                        fontWeight = if (dayNum == today) FontWeight.Bold else FontWeight.Normal,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
