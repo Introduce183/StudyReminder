@@ -426,74 +426,67 @@ private fun BarChart(
     val barColor = Color(0xFF39C5BB)
     val barBg = Color(0x2239C5BB)
     val barHeight = 100.dp
+    val labelHeight = 14.dp
 
-    Column {
-        // 柱形图 — bars + labels in one Row, each bar is a Column aligned to bottom
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.Bottom
-        ) {
-            data.forEachIndexed { index, value ->
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        data.forEachIndexed { index, value ->
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Value label — fixed height so all columns are same total height
+                Box(
+                    modifier = Modifier.height(labelHeight),
+                    contentAlignment = Alignment.Center
                 ) {
                     if (value > 0) {
                         Text(
                             text = "$value",
                             fontSize = 9.sp,
-                            color = Color(0xFF4E7F84),
-                            modifier = Modifier.padding(bottom = 2.dp)
+                            color = Color(0xFF4E7F84)
                         )
-                    } else {
-                        Spacer(modifier = Modifier.height(14.dp))
-                    }
-                    val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
-                    Box(
-                        modifier = Modifier
-                            .width(16.dp)
-                            .height(barHeight)
-                    ) {
-                        // Background track
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                .background(barBg)
-                        )
-                        // Colored fill from bottom
-                        if (value > 0) {
-                            val fillHeight = barHeight * fraction
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(fillHeight)
-                                    .align(Alignment.BottomCenter)
-                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                    .background(barColor)
-                            )
-                        }
                     }
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // 标签行
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            labels.forEach { label ->
-                Text(
-                    text = label,
-                    fontSize = 10.sp,
-                    color = Color(0xFF4E7F84),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
-                )
+                // Bar
+                val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
+                Box(
+                    modifier = Modifier
+                        .width(16.dp)
+                        .height(barHeight)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(barBg)
+                    )
+                    if (value > 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(barHeight * fraction)
+                                .align(Alignment.BottomCenter)
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(barColor)
+                        )
+                    }
+                }
+                // Day label — fixed height
+                Box(
+                    modifier = Modifier.height(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = labels.getOrElse(index) { "" },
+                        fontSize = 10.sp,
+                        color = Color(0xFF4E7F84),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
@@ -508,10 +501,11 @@ private fun ScrollableBarChart(
     val barColor = Color(0xFF39C5BB)
     val barBg = Color(0x2239C5BB)
     val barWidth = 24.dp
-    val totalWidth = barWidth * data.size
+    val barHeight = 100.dp
+    val valueLabelHeight = 14.dp
+    val dayLabelHeight = 16.dp
     val scrollState = rememberScrollState()
 
-    // Auto-scroll to current day (today) on first composition
     val today = remember { java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_MONTH) }
     val density = androidx.compose.ui.platform.LocalDensity.current
     LaunchedEffect(data.size) {
@@ -521,60 +515,60 @@ private fun ScrollableBarChart(
         }
     }
 
-    Column {
-        // Bars + labels in a single scrollable column — always aligned
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(scrollState)
-        ) {
-            data.forEachIndexed { index, value ->
-                Column(
-                    modifier = Modifier.width(barWidth),
-                    horizontalAlignment = Alignment.CenterHorizontally
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        data.forEachIndexed { index, value ->
+            Column(
+                modifier = Modifier.width(barWidth),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Value label — fixed height
+                Box(
+                    modifier = Modifier.height(valueLabelHeight),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Value label above bar
                     if (value > 0) {
                         Text(
                             text = "$value",
                             fontSize = 9.sp,
-                            color = Color(0xFF4E7F84),
-                            modifier = Modifier.padding(bottom = 2.dp)
+                            color = Color(0xFF4E7F84)
                         )
-                    } else {
-                        Spacer(modifier = Modifier.height(12.dp))
                     }
-                    // Bar — draw background + foreground in a single Box
-                    val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
-                    val barHeight = 100.dp
+                }
+                // Bar
+                val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
+                Box(
+                    modifier = Modifier
+                        .width(14.dp)
+                        .height(barHeight)
+                ) {
                     Box(
                         modifier = Modifier
-                            .width(14.dp)
-                            .height(barHeight)
-                    ) {
-                        // Background track
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(barBg)
+                    )
+                    if (value > 0) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .fillMaxWidth()
+                                .height(barHeight * fraction)
+                                .align(Alignment.BottomCenter)
                                 .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                .background(barBg)
+                                .background(barColor)
                         )
-                        // Colored fill from bottom
-                        if (value > 0) {
-                            val fillHeight = barHeight * fraction
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(fillHeight)
-                                    .align(Alignment.BottomCenter)
-                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                    .background(barColor)
-                            )
-                        }
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    // Day label — always show, every day
-                    val dayNum = index + 1
+                }
+                // Day label — fixed height
+                val dayNum = index + 1
+                Box(
+                    modifier = Modifier.height(dayLabelHeight),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = "$dayNum",
                         fontSize = 8.sp,
