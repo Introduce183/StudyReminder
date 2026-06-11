@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
-import androidx.lifecycle.MutableLiveData
 import com.study.reminder.helper.NotificationHelper
 import com.study.reminder.helper.ReminderDispatcher
 import com.study.reminder.helper.TauntHelper
@@ -17,6 +16,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -35,8 +35,8 @@ class TimerService : Service() {
         const val EXTRA_ENABLE_FORCE_HOME = "enable_force_home"
         const val EXTRA_SLOT_LABEL = "slot_label"
 
-        val remainingTimeLive = MutableLiveData(0)
-        val timerRunningLive = MutableLiveData(false)
+        val remainingTimeLive = MutableStateFlow(0)
+        val timerRunningLive = MutableStateFlow(false)
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -88,7 +88,7 @@ class TimerService : Service() {
 
     private fun startTimer(minutes: Int, prefs: android.content.SharedPreferences) {
         remainingSeconds = minutes * 60
-        timerRunningLive.postValue(true)
+        timerRunningLive.value = true
 
         startForegroundCompat(
             NotificationHelper.FOREGROUND_ID,
@@ -100,7 +100,7 @@ class TimerService : Service() {
             while (remainingSeconds > 0) {
                 delay(1000L)
                 remainingSeconds--
-                remainingTimeLive.postValue(remainingSeconds)
+                remainingTimeLive.value = remainingSeconds
                 val h = remainingSeconds / 3600
                 val m = (remainingSeconds % 3600) / 60
                 val s = remainingSeconds % 60
@@ -114,7 +114,7 @@ class TimerService : Service() {
     }
 
     private suspend fun onTimerFinished(prefs: android.content.SharedPreferences) {
-        timerRunningLive.postValue(false)
+        timerRunningLive.value = false
         StudyStatsRepository.endSession(this)
         val (message, emoji) = TauntHelper.random()
 
@@ -145,7 +145,7 @@ class TimerService : Service() {
 
     private fun stopTimer() {
         timerJob?.cancel()
-        timerRunningLive.postValue(false)
+        timerRunningLive.value = false
         StudyStatsRepository.endSession(this)
         NotificationHelper.cancelForeground(this)
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -165,8 +165,8 @@ class TimerService : Service() {
         if (StudyStatsRepository.hasActiveSession(this)) {
             StudyStatsRepository.endSession(this)
         }
-        remainingTimeLive.postValue(0)
-        timerRunningLive.postValue(false)
+        remainingTimeLive.value = 0
+        timerRunningLive.value = false
         serviceScope.cancel()
         super.onDestroy()
     }

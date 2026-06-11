@@ -11,8 +11,8 @@ android {
         applicationId "com.study.reminder"
         minSdk 29
         targetSdk 34
-        versionCode 39
-        versionName "1.DREAM"
+        versionCode 40
+        versionName "1.MIMO"
     }
 
     buildFeatures {
@@ -51,4 +51,5 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
 }

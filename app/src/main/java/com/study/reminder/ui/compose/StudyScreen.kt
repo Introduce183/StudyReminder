@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.study.reminder.R
 import com.study.reminder.model.DayStats
 import com.study.reminder.model.StudyStatsRepository
 import com.study.reminder.service.TimerService
@@ -94,7 +96,7 @@ fun StudyScreen() {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFEAFBF8)
+        color = AppColors.Background
     ) {
         Column(
             modifier = Modifier
@@ -104,10 +106,10 @@ fun StudyScreen() {
         ) {
             // 标题
             Text(
-                text = "📊 学习统计",
+                text = stringResource(R.string.study_statistics),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF10393F),
+                color = AppColors.TextPrimary,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
@@ -124,9 +126,9 @@ fun StudyScreen() {
                         val m = (elapsedSeconds % 3600) / 60
                         val s = elapsedSeconds % 60
                         Text(
-                            text = "🟢 学习中",
+                            text = stringResource(R.string.studying),
                             fontSize = 14.sp,
-                            color = Color(0xFF39C5BB),
+                            color = AppColors.Accent,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -134,23 +136,23 @@ fun StudyScreen() {
                             text = String.format("%02d:%02d:%02d", h, m, s),
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10393F)
+                            color = AppColors.TextPrimary
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         LiquidGlassButton(
-                            text = "结束学习",
+                            text = stringResource(R.string.end_study),
                             primary = false,
                             onClick = { endStudySession() }
                         )
                     } else {
                         Text(
-                            text = if (isInSlot) "当前在学习时间段内" else "当前不在学习时间段",
+                            text = stringResource(if (isInSlot) R.string.in_study_slot else R.string.not_in_study_slot),
                             fontSize = 14.sp,
-                            color = Color(0xFF4E7F84)
+                            color = AppColors.TextSecondary
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         LiquidGlassButton(
-                            text = "开始学习",
+                            text = stringResource(R.string.start_study),
                             onClick = { startManualSession() }
                         )
                     }
@@ -161,24 +163,24 @@ fun StudyScreen() {
             GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "今日概览",
+                        text = stringResource(R.string.today_overview),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10393F),
+                        color = AppColors.TextPrimary,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                     Row(modifier = Modifier.fillMaxWidth()) {
                         StatCard(
-                            label = "学习时长",
+                            label = stringResource(R.string.study_duration),
                             value = formatMinutes(todayStats.totalMinutes),
-                            color = Color(0xFF39C5BB),
+                            color = AppColors.Accent,
                             modifier = Modifier.weight(1f)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         StatCard(
-                            label = "摸鱼次数",
+                            label = stringResource(R.string.distraction_count),
                             value = "${todayStats.distractionCount}",
-                            color = Color(0xFFFF77B7),
+                            color = AppColors.AccentPink,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -192,9 +194,9 @@ fun StudyScreen() {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        TabButton("本周", selectedTab == 0) { selectedTab = 0 }
+                        TabButton(stringResource(R.string.this_week), selectedTab == 0) { selectedTab = 0 }
                         Spacer(modifier = Modifier.width(8.dp))
-                        TabButton("本月", selectedTab == 1) { selectedTab = 1 }
+                        TabButton(stringResource(R.string.this_month), selectedTab == 1) { selectedTab = 1 }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -212,16 +214,16 @@ fun StudyScreen() {
                         // 周汇总 + 对比
                         Row(modifier = Modifier.fillMaxWidth()) {
                             StatCard(
-                                label = "周总时长",
+                                label = stringResource(R.string.week_total),
                                 value = formatMinutes(weekTotal),
-                                color = Color(0xFF39C5BB),
+                                color = AppColors.Accent,
                                 modifier = Modifier.weight(1f)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             StatCard(
-                                label = "周摸鱼",
+                                label = stringResource(R.string.week_distraction),
                                 value = "${weekDistraction}次",
-                                color = Color(0xFFFF77B7),
+                                color = AppColors.AccentPink,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -248,9 +250,9 @@ fun StudyScreen() {
                         // 月汇总 + 对比
                         Row(modifier = Modifier.fillMaxWidth()) {
                             StatCard(
-                                label = "月总时长",
+                                label = stringResource(R.string.month_total),
                                 value = formatMinutes(monthTotal),
-                                color = Color(0xFF39C5BB),
+                                color = AppColors.Accent,
                                 modifier = Modifier.weight(1f)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
@@ -324,7 +326,7 @@ private fun ComparisonText(current: Int, previous: Int, period: String) {
     } else {
         "与上${period}持平"
     }
-    val color = if (diff > 0) Color(0xFF39C5BB) else if (diff < 0) Color(0xFFFF77B7) else Color(0xFF4E7F84)
+    val color = if (diff > 0) AppColors.Accent else if (diff < 0) AppColors.AccentPink else AppColors.TextSecondary
     Text(
         text = text,
         fontSize = 12.sp,
@@ -340,11 +342,11 @@ private fun ComparisonCard(current: Int, previous: Int, modifier: Modifier = Mod
     val diff = current - previous
     val text = if (diff > 0) "+${formatMinutes(diff)}" else if (diff < 0) formatMinutes(diff) else "0"
     val label = if (previous > 0) "较上月" else "较上月"
-    val color = if (diff > 0) Color(0xFF39C5BB) else if (diff < 0) Color(0xFFFF77B7) else Color(0xFF4E7F84)
+    val color = if (diff > 0) AppColors.Accent else if (diff < 0) AppColors.AccentPink else AppColors.TextSecondary
 
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = Color(0xDDF9F4),
+        color = AppColors.CardBgSoft,
         modifier = modifier
     ) {
         Column(
@@ -361,7 +363,7 @@ private fun ComparisonCard(current: Int, previous: Int, modifier: Modifier = Mod
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = Color(0xFF4E7F84)
+                color = AppColors.TextSecondary
             )
         }
     }
@@ -376,7 +378,7 @@ private fun StatCard(
 ) {
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = Color(0xDDF9F4),
+        color = AppColors.CardBgSoft,
         modifier = modifier
     ) {
         Column(
@@ -393,7 +395,7 @@ private fun StatCard(
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = Color(0xFF4E7F84)
+                color = AppColors.TextSecondary
             )
         }
     }
@@ -404,14 +406,14 @@ private fun TabButton(text: String, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
     Surface(
         shape = shape,
-        color = if (selected) Color(0xFF39C5BB) else Color(0xDDF9F4),
+        color = if (selected) AppColors.Accent else AppColors.CardBgSoft,
         onClick = onClick
     ) {
         Text(
             text = text,
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) Color.White else Color(0xFF4E7F84),
+            color = if (selected) AppColors.White else AppColors.TextSecondary,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
         )
     }
@@ -423,7 +425,7 @@ private fun BarChart(
     labels: List<String>,
     maxValue: Int
 ) {
-    val barColor = Color(0xFF39C5BB)
+    val barColor = AppColors.Accent
     val barBg = Color(0x2239C5BB)
     val barHeight = 100.dp
     val labelHeight = 18.dp
@@ -447,7 +449,7 @@ private fun BarChart(
                         Text(
                             text = "$value",
                             fontSize = 9.sp,
-                            color = Color(0xFF4E7F84)
+                            color = AppColors.TextSecondary
                         )
                     }
                 }
@@ -483,7 +485,7 @@ private fun BarChart(
                     Text(
                         text = labels.getOrElse(index) { "" },
                         fontSize = 10.sp,
-                        color = Color(0xFF4E7F84),
+                        color = AppColors.TextSecondary,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -498,7 +500,7 @@ private fun ScrollableBarChart(
     labels: List<String>,
     maxValue: Int
 ) {
-    val barColor = Color(0xFF39C5BB)
+    val barColor = AppColors.Accent
     val barBg = Color(0x2239C5BB)
     val barWidth = 24.dp
     val barHeight = 100.dp
@@ -535,7 +537,7 @@ private fun ScrollableBarChart(
                         Text(
                             text = "$value",
                             fontSize = 9.sp,
-                            color = Color(0xFF4E7F84)
+                            color = AppColors.TextSecondary
                         )
                     }
                 }
@@ -572,7 +574,7 @@ private fun ScrollableBarChart(
                     Text(
                         text = "$dayNum",
                         fontSize = 8.sp,
-                        color = if (dayNum == today) Color(0xFF39C5BB) else Color(0xFF4E7F84),
+                        color = if (dayNum == today) AppColors.Accent else AppColors.TextSecondary,
                         fontWeight = if (dayNum == today) FontWeight.Bold else FontWeight.Normal,
                         textAlign = TextAlign.Center
                     )

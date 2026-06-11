@@ -31,6 +31,22 @@ private val StudyDarkColors = darkColorScheme(
     outline = Color(0x8063D2D6)
 )
 
+object AppColors {
+    val Background = Color(0xFFEAFBF8)
+    val CardBg = Color(0xCCF7FFFF)
+    val CardBgSoft = Color(0xDDF9F4)
+    val TextPrimary = Color(0xFF10393F)
+    val TextSecondary = Color(0xFF4E7F84)
+    val Accent = Color(0xFF39C5BB)
+    val AccentPink = Color(0xFFFF77B7)
+    val GlassStroke = Color(0x90FFFFFF)
+    val InfoBg = Color(0xE8FFFA)
+    val InfoText = Color(0xFF17646B)
+    val White = Color.White
+    val LightDivider = Color(0x15000000)
+    val WeekSelectedBg = Color(0x15000000)
+}
+
 @Composable
 fun StudyReminderComposeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

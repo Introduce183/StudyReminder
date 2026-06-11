@@ -7,14 +7,17 @@ import org.json.JSONArray
 object SlotRepository {
 
     private const val PREF_KEY = "study_slots"
+    @Volatile private var cachedSlots: MutableList<StudySlot>? = null
 
     fun getSlots(context: Context): MutableList<StudySlot> {
+        cachedSlots?.let { return it.toMutableList() }
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
         val json = prefs.getString(PREF_KEY, "[]") ?: "[]"
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { StudySlot.fromJson(arr.getJSONObject(it)) }.toMutableList()
         } catch (e: Exception) { Log.w("SlotRepository", "Failed to parse slots", e); mutableListOf() }
+            .also { cachedSlots = it.toMutableList() }
     }
 
     fun saveSlots(context: Context, slots: List<StudySlot>) {
@@ -22,6 +25,7 @@ object SlotRepository {
         slots.forEach { arr.put(it.toJson()) }
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().putString(PREF_KEY, arr.toString()).apply()
+        cachedSlots = slots.toMutableList()
     }
 
     fun addSlot(context: Context, slot: StudySlot) {

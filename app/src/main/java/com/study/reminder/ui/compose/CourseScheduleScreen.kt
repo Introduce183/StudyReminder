@@ -20,6 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.study.reminder.R
 import com.study.reminder.model.CourseSchedule
 import com.study.reminder.model.CourseScheduleRepository
 import java.text.SimpleDateFormat
@@ -69,7 +71,7 @@ fun CourseScheduleScreen(
         ) {
             // Title
             Text(
-                text = "📅 课表模式",
+                text = stringResource(R.string.course_schedule),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF10393F),
@@ -84,13 +86,13 @@ fun CourseScheduleScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = if (weekNum > 0) "当前第${weekNum}周" else "课表已导入",
+                        text = if (weekNum > 0) stringResource(R.string.current_week, weekNum) else stringResource(R.string.course_imported),
                         fontSize = 14.sp,
                         color = Color(0xFF4E7F84)
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "监督开关",
+                            text = stringResource(R.string.week_selector),
                             fontSize = 14.sp,
                             color = Color(0xFF4E7F84)
                         )
@@ -107,14 +109,14 @@ fun CourseScheduleScreen(
             // Action buttons
             Row(modifier = Modifier.fillMaxWidth()) {
                 LiquidGlassButton(
-                    text = "导入课表",
+                    text = stringResource(R.string.import_course),
                     onClick = onImportIcs,
                     modifier = Modifier.weight(1f)
                 )
                 if (courses.isNotEmpty()) {
                     Spacer(modifier = Modifier.width(8.dp))
                     LiquidGlassButton(
-                        text = "清空课表",
+                        text = stringResource(R.string.clear_course),
                         primary = false,
                         onClick = onDeleteAll,
                         modifier = Modifier.weight(1f)
@@ -136,12 +138,12 @@ fun CourseScheduleScreen(
                         Text(text = "📚", fontSize = 48.sp)
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "还没有导入课表",
+                            text = stringResource(R.string.no_course),
                             fontSize = 16.sp,
                             color = Color(0xFF4E7F84)
                         )
                         Text(
-                            text = "点击「导入课表」选择 .ics 文件",
+                            text = stringResource(R.string.import_hint),
                             fontSize = 13.sp,
                             color = Color(0xFF4E7F84),
                             modifier = Modifier.padding(top = 4.dp)
@@ -179,7 +181,7 @@ fun CourseScheduleScreen(
                 if (weekCourses.isEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "本周没有课程",
+                        text = stringResource(R.string.no_course_this_week),
                         fontSize = 14.sp,
                         color = Color(0xFF4E7F84),
                         modifier = Modifier.fillMaxWidth(),

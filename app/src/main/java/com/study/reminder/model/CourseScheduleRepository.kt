@@ -11,16 +11,19 @@ object CourseScheduleRepository {
     private const val PREF_COURSES = "course_schedules"
     private const val PREF_SEMESTER_START = "semester_start_date"
     private val dateFormatTL = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    @Volatile private var cachedCourses: List<CourseSchedule>? = null
 
     // ── 课程数据读写 ─────────────────────────────────────────
 
     fun getCourses(context: Context): List<CourseSchedule> {
+        cachedCourses?.let { return it }
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
         val json = prefs.getString(PREF_COURSES, "[]") ?: "[]"
         return try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { CourseSchedule.fromJson(arr.getJSONObject(it)) }
         } catch (e: Exception) { Log.w("CourseScheduleRepo", "Failed to parse courses", e); emptyList() }
+            .also { cachedCourses = it }
     }
 
     fun saveCourses(context: Context, courses: List<CourseSchedule>) {
@@ -28,6 +31,7 @@ object CourseScheduleRepository {
         courses.forEach { arr.put(it.toJson()) }
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().putString(PREF_COURSES, arr.toString()).apply()
+        cachedCourses = courses
     }
 
     fun addCourses(context: Context, courses: List<CourseSchedule>) {

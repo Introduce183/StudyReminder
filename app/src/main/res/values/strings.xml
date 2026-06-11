@@ -2,4 +2,84 @@
 <resources>
     <string name="app_name">学习提醒器</string>
     <string name="accessibility_service_label">学习提醒器 - 学习时间监督</string>
+
+    <string name="study_statistics">📊 学习统计</string>
+    <string name="course_schedule">📅 课表模式</string>
+    <string name="settings_title">🎧 学习提醒器</string>
+    <string name="today_overview">今日概览</string>
+    <string name="study_duration">学习时长</string>
+    <string name="distraction_count">摸鱼次数</string>
+    <string name="week_total">周总时长</string>
+    <string name="week_distraction">周摸鱼</string>
+    <string name="month_total">月总时长</string>
+    <string name="study_time">学习时间</string>
+    <string name="start_study">开始学习</string>
+    <string name="end_study">结束学习</string>
+    <string name="studying">🟢 学习中</string>
+    <string name="in_study_slot">当前在学习时间段内</string>
+    <string name="not_in_study_slot">当前不在学习时间段</string>
+    <string name="this_week">本周</string>
+    <string name="this_month">本月</string>
+
+    <string name="notification_remind">🔔 通知提醒（多次刷新）</string>
+    <string name="island_remind">💊 超级岛提醒</string>
+    <string name="small_window_remind">🪟 后台弹出小窗</string>
+    <string name="fullscreen_remind">📱 全屏弹出（确认返桌面）</string>
+    <string name="force_home_remind">🏠 强制返回桌面</string>
+    <string name="whitelist">✅ 白名单</string>
+    <string name="accessibility_optional">♿ 无障碍（可选）</string>
+    <string name="add_slot">＋ 添加</string>
+    <string name="study_slots">📅 学习时间段</string>
+    <string name="no_slot_hint">还没有学习时间段\n点「添加」设置，如 10:00 → 11:30</string>
+    <string name="remind_method">提醒方式</string>
+    <string name="slot_info_hint">💡 时间段到点提醒无需无障碍权限，直接生效！\n无障碍权限仅用于检测「学习中途开手机」功能，可选开启。</string>
+
+    <string name="import_course">导入课表</string>
+    <string name="clear_course">清空课表</string>
+    <string name="no_course">还没有导入课表</string>
+    <string name="import_hint">点击「导入课表」选择 .ics 文件</string>
+    <string name="no_course_this_week">本周没有课程</string>
+    <string name="week_selector">监督开关</string>
+    <string name="current_week">当前第%d周</string>
+    <string name="course_imported">课表已导入</string>
+
+    <string name="confirm_add">确认添加</string>
+    <string name="confirm_edit">确认修改</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="optional_label">备注（可选）</string>
+    <string name="label_hint">如：上午自习、晚间复习</string>
+    <string name="start_time">🕐 开始时间</string>
+    <string name="end_time">🕑 结束时间</string>
+    <string name="repeat_days">📅 重复日期</string>
+    <string name="hour_label">小时 (0-23)</string>
+    <string name="minute_label">分钟 (0-59)</string>
+    <string name="time_required">请填写完整时间</string>
+    <string name="hour_range">小时请输入 0-23</string>
+    <string name="minute_range">分钟请输入 0-59</string>
+    <string name="end_after_start">结束时间必须晚于开始时间</string>
+    <string name="select_day">请至少选择一天</string>
+
+    <string name="delete_slot">删除时间段</string>
+    <string name="confirm_delete_slot">确定删除「%s」吗？</string>
+    <string name="slot_added">已添加「%s」并重新安排提醒</string>
+    <string name="slot_updated">已更新「%s」</string>
+
+    <string name="permission_guide_title">首次使用建议先完成这些设置</string>
+    <string name="permission_guide_message">为了让提醒尽量稳定，建议先检查以下权限：\n\n1. 允许显示悬浮窗\n2. 允许后台弹出界面\n3. 建议加入自启动和电池优化白名单\n\n其中悬浮窗可以直接跳转授权；后台弹出界面和自启动通常是厂商设置，应用会尽量帮你打开对应页面。</string>
+    <string name="go_settings">去设置</string>
+    <string name="later">稍后</string>
+    <string name="overlay_permission_title">需要悬浮窗权限</string>
+    <string name="overlay_permission_message">动态岛、小窗、全屏悬浮提醒都依赖悬浮窗权限。点击继续后会跳到系统设置页，请手动打开。</string>
+    <string name="go_authorize">去授权</string>
+    <string name="skip">跳过</string>
+    <string name="background_guide_title">建议打开后台弹出和自启动</string>
+    <string name="background_guide_message">为了让提醒更稳定，建议继续检查后台弹出界面、自启动和电池优化白名单。不同机型入口不一样，应用会尽量帮你打开对应页面。</string>
+    <string name="skip_first">先跳过</string>
+    <string name="accessibility_guide_title">建议开启无障碍权限</string>
+    <string name="accessibility_guide_message">无障碍权限不是固定时间段到点提醒的必需项。\n\n它的作用是：在学习时间内，如果你切到白名单之外的应用，软件可以及时检测并再次提醒你。\n\n如果你只需要普通到点提醒，也可以暂时不开。</string>
+    <string name="go_enable">去开启</string>
+    <string name="not_now">先不</string>
+    <string name="exact_alarm_title">需要精确闹钟权限</string>
+    <string name="exact_alarm_message">学习时间段依赖精确闹钟，到点提醒会更稳定。点击继续后会跳到系统设置页，请手动允许。</string>
 </resources>

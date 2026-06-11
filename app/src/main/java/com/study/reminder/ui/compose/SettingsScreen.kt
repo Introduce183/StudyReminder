@@ -8,9 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.study.reminder.R
 import com.study.reminder.model.StudySlot
 
 @Composable
@@ -44,7 +46,7 @@ fun SettingsScreen(
         ) {
             item {
                 Text(
-                    text = "🎧 学习提醒器",
+                    text = stringResource(R.string.settings_title),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF10393F),
@@ -61,20 +63,20 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "📅 学习时间段",
+                                text = stringResource(R.string.study_slots),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF10393F)
                             )
                             LiquidGlassButton(
-                                text = "＋ 添加",
+                                text = stringResource(R.string.add_slot),
                                 onClick = onAddSlot
                             )
                         }
 
                         if (slots.isEmpty()) {
                             Text(
-                                text = "还没有学习时间段\n点「添加」设置，如 10:00 → 11:30",
+                                text = stringResource(R.string.no_slot_hint),
                                 color = Color(0xFF4E7F84),
                                 fontSize = 13.sp,
                                 modifier = Modifier
@@ -97,20 +99,20 @@ fun SettingsScreen(
             }
 
             item {
-                GlassCard(modifier = Modifier.padding(bottom = 16.dp, top = if (slots.isNotEmpty()) 6.dp else 0.dp)) {
+                GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "提醒方式",
+                            text = stringResource(R.string.remind_method),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF10393F),
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
-                        OptionSwitch("🔔 通知提醒（多次刷新）", notificationEnabled, onNotificationChange)
-                        OptionSwitch("💊 超级岛提醒", islandEnabled, onIslandChange)
-                        OptionSwitch("🪟 后台弹出小窗", smallWindowEnabled, onSmallWindowChange)
-                        OptionSwitch("📱 全屏弹出（确认返桌面）", fullScreenEnabled, onFullScreenChange)
-                        OptionSwitch("🏠 强制返回桌面", forceHomeEnabled, onForceHomeChange)
+                        OptionSwitch(stringResource(R.string.notification_remind), notificationEnabled, onNotificationChange)
+                        OptionSwitch(stringResource(R.string.island_remind), islandEnabled, onIslandChange)
+                        OptionSwitch(stringResource(R.string.small_window_remind), smallWindowEnabled, onSmallWindowChange)
+                        OptionSwitch(stringResource(R.string.fullscreen_remind), fullScreenEnabled, onFullScreenChange)
+                        OptionSwitch(stringResource(R.string.force_home_remind), forceHomeEnabled, onForceHomeChange)
                     }
                 }
             }
@@ -122,7 +124,7 @@ fun SettingsScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
                     Text(
-                        text = "💡 时间段到点提醒无需无障碍权限，直接生效！\n无障碍权限仅用于检测「学习中途开手机」功能，可选开启。",
+                        text = stringResource(R.string.slot_info_hint),
                         fontSize = 13.sp,
                         color = Color(0xFF17646B),
                         modifier = Modifier.padding(14.dp),
@@ -134,7 +136,7 @@ fun SettingsScreen(
             item {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     LiquidGlassButton(
-                        text = "✅ 白名单",
+                        text = stringResource(R.string.whitelist),
                         onClick = onWhitelist,
                         primary = false,
                         modifier = Modifier
@@ -142,7 +144,7 @@ fun SettingsScreen(
                             .padding(end = 8.dp)
                     )
                     LiquidGlassButton(
-                        text = "♿ 无障碍（可选）",
+                        text = stringResource(R.string.accessibility_optional),
                         onClick = onAccessibilityGuide,
                         primary = false,
                         modifier = Modifier.weight(1f)

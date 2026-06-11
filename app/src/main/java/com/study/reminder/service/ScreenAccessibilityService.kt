@@ -21,6 +21,10 @@ class ScreenAccessibilityService : AccessibilityService() {
         private var lastReminderPkg: String = ""
         private var lastReminderTime: Long = 0L
         private const val COOLDOWN_MS = 5 * 60 * 1000L
+
+        @Volatile private var cachedInStudyTime: Boolean? = null
+        @Volatile private var studyTimeCacheTime: Long = 0L
+        private const val STUDY_TIME_CACHE_TTL = 30_000L
     }
 
     private val launcherPkgs = mutableSetOf<String>()
@@ -97,6 +101,17 @@ class ScreenAccessibilityService : AccessibilityService() {
     }
 
     private fun isInStudyTime(): Boolean {
+        val now = System.currentTimeMillis()
+        cachedInStudyTime?.let {
+            if (now - studyTimeCacheTime < STUDY_TIME_CACHE_TTL) return it
+        }
+        val result = isInStudyTimeUncached()
+        cachedInStudyTime = result
+        studyTimeCacheTime = now
+        return result
+    }
+
+    private fun isInStudyTimeUncached(): Boolean {
         val now = Calendar.getInstance()
         val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
         val dow = now.get(Calendar.DAY_OF_WEEK)
