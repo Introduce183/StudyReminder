@@ -31,6 +31,11 @@ class AppPickerActivity : AppCompatActivity() {
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 根据设置应用正确的主题
+        val prefs = getSharedPreferences("study_prefs", MODE_PRIVATE)
+        val isDark = prefs.getBoolean("opt_dark_theme", true)
+        setTheme(if (isDark) R.style.Theme_StudyReminder else R.style.Theme_StudyReminder_Light)
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_picker)
         title = "白名单设置"

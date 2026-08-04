@@ -16,6 +16,22 @@
         <item name="android:windowBackground">@color/bg_main</item>
     </style>
 
+    <style name="Theme.StudyReminder.Light" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryVariant">@color/accent_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent_pink</item>
+        <item name="colorTertiary">@color/accent_blue</item>
+        <item name="colorSurface">@color/card_bg</item>
+        <item name="colorSurfaceVariant">@color/card_bg_soft</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOutline">@color/text_tertiary</item>
+        <item name="colorOutlineVariant">@color/glass_stroke</item>
+        <item name="colorControlActivated">@color/accent</item>
+        <item name="android:windowBackground">@color/bg_main</item>
+    </style>
+
     <style name="Theme.Translucent" parent="Theme.Material3.Light.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
