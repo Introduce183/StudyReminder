@@ -77,7 +77,9 @@ fun StudyScreen() {
     fun startManualSession() {
         val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(context)
         val duration = if (remaining > 0) remaining else 24 * 60
-        StudyStatsRepository.startSession(context, -1L)
+        // 获取当前活跃的时间段 ID，如果在时间段内则记录，否则为 -1L
+        val activeSlotId = if (remaining > 0) StudyStatsRepository.getActiveSlotId(context) else -1L
+        StudyStatsRepository.startSession(context, activeSlotId)
         val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
             action = TimerService.ACTION_START
             putExtra(TimerService.EXTRA_DURATION_MINUTES, duration)
