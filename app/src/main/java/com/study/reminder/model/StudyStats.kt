@@ -182,6 +182,30 @@ object StudyStatsRepository {
         return -1L
     }
 
+    /**
+     * 获取所有当前活跃的时间段 ID 列表
+     */
+    fun getActiveSlotIds(context: Context): List<Long> {
+        val slots = SlotRepository.getSlots(context)
+        val cal = Calendar.getInstance()
+        val dow = when (cal.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> 1
+            Calendar.TUESDAY -> 2
+            Calendar.WEDNESDAY -> 3
+            Calendar.THURSDAY -> 4
+            Calendar.FRIDAY -> 5
+            Calendar.SATURDAY -> 6
+            Calendar.SUNDAY -> 7
+            else -> 0
+        }
+        val nowMin = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+
+        return slots.filter { slot ->
+            slot.enabled && dow in slot.enableDays &&
+            nowMin in (slot.startHour * 60 + slot.startMinute) until (slot.endHour * 60 + slot.endMinute)
+        }.map { it.id }
+    }
+
     // ── 摸鱼记录（独立于会话，立即保存）─────────────────────────
 
     fun recordDistraction(context: Context) {

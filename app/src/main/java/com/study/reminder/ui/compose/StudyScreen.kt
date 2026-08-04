@@ -101,9 +101,12 @@ fun StudyScreen(
         }
         context.startService(serviceIntent)
 
-        // 如果是从时间段开始的学习，自动禁用该时间段
+        // 如果是手动开始的学习（有时间段ID），自动禁用所有活跃的时间段
         if (activeSlotId >= 0) {
-            SlotRepository.disableSlot(context, activeSlotId)
+            val activeSlotIds = StudyStatsRepository.getActiveSlotIds(context)
+            for (id in activeSlotIds) {
+                SlotRepository.disableSlot(context, id)
+            }
             SlotScheduler.rescheduleAll(context)
             // 通知外部刷新时间段列表
             onSlotDisabled()
