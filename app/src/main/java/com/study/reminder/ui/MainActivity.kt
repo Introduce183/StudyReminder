@@ -169,7 +169,9 @@ class MainActivity : ComponentActivity() {
                     val activity = this@MainActivity
                     Box(modifier = Modifier.padding(paddingValues)) {
                         when (selectedTab) {
-                            0 -> StudyScreen()
+                            0 -> StudyScreen(
+                                onSlotDisabled = { refreshSlotList() }
+                            )
                             1 -> CourseScheduleScreen(
                                 courses = coursesState,
                                 semesterStartDate = semesterStartDateState.value,

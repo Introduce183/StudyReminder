@@ -46,6 +46,13 @@ object SlotRepository {
         saveSlots(context, slots)
     }
 
+    fun disableSlot(context: Context, id: Long) {
+        val slots = getSlots(context).map {
+            if (it.id == id) it.copy(enabled = false) else it
+        }
+        saveSlots(context, slots)
+    }
+
     fun updateSlot(context: Context, slot: StudySlot) {
         val slots = getSlots(context).map {
             if (it.id == slot.id) slot else it

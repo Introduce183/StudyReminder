@@ -29,7 +29,9 @@ import com.study.reminder.service.TimerService
 import kotlinx.coroutines.delay
 
 @Composable
-fun StudyScreen() {
+fun StudyScreen(
+    onSlotDisabled: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     var selectedTab by remember { mutableStateOf(0) }
@@ -101,8 +103,10 @@ fun StudyScreen() {
 
         // 如果是从时间段开始的学习，自动禁用该时间段
         if (activeSlotId >= 0) {
-            SlotRepository.toggleSlot(context, activeSlotId)
+            SlotRepository.disableSlot(context, activeSlotId)
             SlotScheduler.rescheduleAll(context)
+            // 通知外部刷新时间段列表
+            onSlotDisabled()
         }
 
         refresh()
