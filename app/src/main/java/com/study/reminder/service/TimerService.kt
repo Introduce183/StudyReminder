@@ -75,7 +75,6 @@ class TimerService : Service() {
                             context = this@TimerService,
                             enNotif = prefs.getBoolean("opt_notification", true),
                             enIsland = prefs.getBoolean("opt_island", false),
-                            enSmall = prefs.getBoolean("opt_small_window", false),
                             enFull = prefs.getBoolean("opt_fullscreen", false),
                             enForce = prefs.getBoolean("opt_force_home", false)
                         )
@@ -125,7 +124,6 @@ class TimerService : Service() {
                 context = this@TimerService,
                 enNotif = prefs.getBoolean("opt_notification", true),
                 enIsland = prefs.getBoolean("opt_island", false),
-                enSmall = prefs.getBoolean("opt_small_window", false),
                 enFull = prefs.getBoolean("opt_fullscreen", false),
                 enForce = prefs.getBoolean("opt_force_home", false)
             )

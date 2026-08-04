@@ -65,7 +65,6 @@ class MainActivity : ComponentActivity() {
     private val slotsState = mutableStateListOf<StudySlot>()
     private val notificationState = mutableStateOf(true)
     private val islandState = mutableStateOf(false)
-    private val smallWindowState = mutableStateOf(false)
     private val fullScreenState = mutableStateOf(false)
     private val forceHomeState = mutableStateOf(false)
     private val isDarkThemeState = mutableStateOf(true)
@@ -191,7 +190,6 @@ class MainActivity : ComponentActivity() {
                     slots = slotsState,
                     notificationEnabled = notificationState.value,
                     islandEnabled = islandState.value,
-                    smallWindowEnabled = smallWindowState.value,
                     fullScreenEnabled = fullScreenState.value,
                     forceHomeEnabled = forceHomeState.value,
                     onAddSlot = {
@@ -237,19 +235,9 @@ class MainActivity : ComponentActivity() {
                         if (checked) maybeGuideOverlayPermission()
                         saveOptions()
                     },
-                    onSmallWindowChange = { checked ->
-                        smallWindowState.value = checked
-                        if (checked) {
-                            fullScreenState.value = false
-                            forceHomeState.value = false
-                            maybeGuideOverlayPermission()
-                        }
-                        saveOptions()
-                    },
                     onFullScreenChange = { checked ->
                         fullScreenState.value = checked
                         if (checked) {
-                            smallWindowState.value = false
                             forceHomeState.value = false
                             maybeGuideOverlayPermissionForFullscreen()
                         }
@@ -258,7 +246,6 @@ class MainActivity : ComponentActivity() {
                     onForceHomeChange = { checked ->
                         forceHomeState.value = checked
                         if (checked) {
-                            smallWindowState.value = false
                             fullScreenState.value = false
                             maybeGuideOverlayPermissionForFullscreen()
                         }
@@ -366,7 +353,6 @@ class MainActivity : ComponentActivity() {
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         notificationState.value = prefs.getBoolean("opt_notification", true)
         islandState.value = prefs.getBoolean("opt_island", false)
-        smallWindowState.value = prefs.getBoolean("opt_small_window", false)
         fullScreenState.value = prefs.getBoolean("opt_fullscreen", false)
         forceHomeState.value = prefs.getBoolean("opt_force_home", false)
         isDarkThemeState.value = prefs.getBoolean("opt_dark_theme", true)
@@ -376,7 +362,6 @@ class MainActivity : ComponentActivity() {
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().apply {
             putBoolean("opt_notification", notificationState.value)
             putBoolean("opt_island", islandState.value)
-            putBoolean("opt_small_window", smallWindowState.value)
             putBoolean("opt_fullscreen", fullScreenState.value)
             putBoolean("opt_force_home", forceHomeState.value)
         }.apply()

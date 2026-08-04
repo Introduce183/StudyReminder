@@ -20,7 +20,6 @@ fun SettingsScreen(
     slots: List<StudySlot>,
     notificationEnabled: Boolean,
     islandEnabled: Boolean,
-    smallWindowEnabled: Boolean,
     fullScreenEnabled: Boolean,
     forceHomeEnabled: Boolean,
     isDarkTheme: Boolean = true,
@@ -30,7 +29,6 @@ fun SettingsScreen(
     onEditSlot: (StudySlot) -> Unit,
     onNotificationChange: (Boolean) -> Unit,
     onIslandChange: (Boolean) -> Unit,
-    onSmallWindowChange: (Boolean) -> Unit,
     onFullScreenChange: (Boolean) -> Unit,
     onForceHomeChange: (Boolean) -> Unit,
     onWhitelist: () -> Unit,
@@ -111,7 +109,6 @@ fun SettingsScreen(
                         )
                         OptionSwitch(stringResource(R.string.notification_remind), notificationEnabled, onNotificationChange)
                         OptionSwitch(stringResource(R.string.island_remind), islandEnabled, onIslandChange)
-                        OptionSwitch(stringResource(R.string.small_window_remind), smallWindowEnabled, onSmallWindowChange)
                         OptionSwitch(stringResource(R.string.fullscreen_remind), fullScreenEnabled, onFullScreenChange)
                         OptionSwitch(stringResource(R.string.force_home_remind), forceHomeEnabled, onForceHomeChange)
                     }

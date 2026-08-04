@@ -3,31 +3,22 @@ package com.study.reminder.service
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
-import android.graphics.RenderEffect
-import android.graphics.Shader
-import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.ImageView
 import android.widget.TextView
-import com.bumptech.glide.Glide
 import com.study.reminder.R
-import com.study.reminder.helper.ButtonMotionHelper
-import com.study.reminder.helper.CharacterHelper
 import com.study.reminder.helper.NotificationHelper
 
 class OverlayService : Service() {
 
     companion object {
         const val ACTION_SHOW_DYNAMIC_ISLAND = "show_dynamic_island"
-        const val ACTION_SHOW_SMALL_WINDOW = "show_small_window"
         const val ACTION_SHOW_FULLSCREEN_ALERT = "show_fullscreen_alert"
         const val ACTION_DISMISS = "dismiss"
         const val EXTRA_MESSAGE = "message"
@@ -38,10 +29,8 @@ class OverlayService : Service() {
 
     private var windowManager: WindowManager? = null
     private var dynamicIslandView: View? = null
-    private var smallWindowView: View? = null
     private var fullscreenView: View? = null
     @Volatile private var isRemovingIsland = false
-    @Volatile private var isRemovingSmall = false
     @Volatile private var isRemovingFullscreen = false
     private val handler = Handler(Looper.getMainLooper())
 
@@ -58,12 +47,6 @@ class OverlayService : Service() {
                 val msg = intent.getStringExtra(EXTRA_MESSAGE) ?: "该学习了"
                 val emoji = intent.getStringExtra(EXTRA_EMOJI) ?: "!"
                 showDynamicIsland(msg, emoji)
-            }
-
-            ACTION_SHOW_SMALL_WINDOW -> {
-                val msg = intent.getStringExtra(EXTRA_MESSAGE) ?: "该学习了"
-                val emoji = intent.getStringExtra(EXTRA_EMOJI) ?: "!"
-                showSmallWindow(msg, emoji)
             }
 
             ACTION_SHOW_FULLSCREEN_ALERT -> {
@@ -113,16 +96,18 @@ class OverlayService : Service() {
         }
 
         dynamicIslandView = view
-        view.setOnClickListener { removeDynamicIsland() }
+        view.setOnClickListener { dismissIslandWithAnimation() }
 
-        view.scaleX = 0.2f
-        view.scaleY = 0.2f
+        // Spring-like entrance: scale from 0.95 with opacity
+        view.scaleX = 0.95f
+        view.scaleY = 0.95f
         view.alpha = 0f
         view.animate()
             .scaleX(1f)
             .scaleY(1f)
             .alpha(1f)
-            .setDuration(350)
+            .setDuration(250)
+            .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
             .start()
 
         handler.postDelayed({ dismissIslandWithAnimation() }, 8000L)
@@ -130,11 +115,13 @@ class OverlayService : Service() {
 
     private fun dismissIslandWithAnimation() {
         val view = dynamicIslandView ?: return
+        // Quick exit: scale to 0.95 with opacity
         view.animate()
-            .scaleX(0.2f)
-            .scaleY(0.2f)
+            .scaleX(0.95f)
+            .scaleY(0.95f)
             .alpha(0f)
-            .setDuration(300)
+            .setDuration(200)
+            .setInterpolator(android.view.animation.AccelerateInterpolator(2f))
             .withEndAction { removeDynamicIsland() }
             .start()
     }
@@ -149,65 +136,6 @@ class OverlayService : Service() {
         isRemovingIsland = false
     }
 
-    private fun showSmallWindow(message: String, emoji: String) {
-        if (!ensureOverlayPermission(message, emoji)) return
-
-        removeSmallWindow()
-        val inflater = LayoutInflater.from(this)
-        val view = inflater.inflate(R.layout.overlay_small_window, null)
-
-        view.findViewById<TextView>(R.id.tv_small_message).text = message
-        view.findViewById<TextView>(R.id.tv_small_emoji).text = emoji
-        view.findViewById<TextView>(R.id.tv_small_character_name).text =
-            CharacterHelper.getCharacterName()
-        loadCharacterGif(view.findViewById(R.id.iv_small_character))
-
-        val params = WindowManager.LayoutParams(
-            dpToPx(300),
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.CENTER
-        }
-
-        val added = runCatching {
-            windowManager?.addView(view, params)
-        }.isSuccess
-        if (!added) {
-            NotificationHelper.showRepeatingAlertNotification(this, message, emoji)
-            stopSelf()
-            return
-        }
-
-        smallWindowView = view
-        applyGlassMotion(view.findViewById(R.id.view_small_glow_1), 18f, 2200L)
-        applyGlassMotion(view.findViewById(R.id.view_small_glow_2), -16f, 2600L)
-        applyBlur(view.findViewById(R.id.view_small_glow_1), 26f)
-        applyBlur(view.findViewById(R.id.view_small_glow_2), 32f)
-
-        view.translationY = 200f
-        view.alpha = 0f
-        view.animate().translationY(0f).alpha(1f).setDuration(350).start()
-
-        val smallConfirmButton = view.findViewById<View>(R.id.btn_small_confirm)
-        ButtonMotionHelper.attachLiquidPress(smallConfirmButton)
-        smallConfirmButton.setOnClickListener {
-            removeSmallWindow()
-            goHome()
-            stopSelf()
-        }
-
-        makeDraggable(view, params)
-
-        handler.postDelayed({
-            removeSmallWindow()
-            goHome()
-            stopSelf()
-        }, 10_000L)
-    }
-
     private fun showFullscreenAlert(message: String, emoji: String, goHomeOnShow: Boolean) {
         if (!ensureOverlayPermission(message, emoji)) {
             if (goHomeOnShow) goHome()
@@ -220,9 +148,6 @@ class OverlayService : Service() {
 
         view.findViewById<TextView>(R.id.tv_overlay_message).text = message
         view.findViewById<TextView>(R.id.tv_overlay_emoji).text = emoji
-        view.findViewById<TextView>(R.id.tv_overlay_character_name).text =
-            CharacterHelper.getCharacterName()
-        loadCharacterGif(view.findViewById(R.id.iv_overlay_character))
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -250,7 +175,6 @@ class OverlayService : Service() {
         view.animate().alpha(1f).setDuration(220L).start()
 
         val overlayConfirmButton = view.findViewById<View>(R.id.btn_overlay_confirm)
-        ButtonMotionHelper.attachLiquidPress(overlayConfirmButton)
         overlayConfirmButton.setOnClickListener {
             removeFullscreenAlert()
             goHome()
@@ -273,44 +197,6 @@ class OverlayService : Service() {
         return false
     }
 
-    private fun makeDraggable(view: View, params: WindowManager.LayoutParams) {
-        var initX = 0
-        var initY = 0
-        var touchX = 0f
-        var touchY = 0f
-
-        view.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    initX = params.x
-                    initY = params.y
-                    touchX = event.rawX
-                    touchY = event.rawY
-                    false
-                }
-
-                MotionEvent.ACTION_MOVE -> {
-                    params.x = initX + (event.rawX - touchX).toInt()
-                    params.y = initY + (event.rawY - touchY).toInt()
-                    runCatching { windowManager?.updateViewLayout(view, params) }
-                    true
-                }
-
-                else -> false
-            }
-        }
-    }
-
-    private fun removeSmallWindow() {
-        if (isRemovingSmall) return
-        isRemovingSmall = true
-        smallWindowView?.let {
-            runCatching { windowManager?.removeView(it) }
-        }
-        smallWindowView = null
-        isRemovingSmall = false
-    }
-
     private fun removeFullscreenAlert() {
         if (isRemovingFullscreen) return
         isRemovingFullscreen = true
@@ -323,7 +209,6 @@ class OverlayService : Service() {
 
     private fun removeAllOverlays() {
         removeDynamicIsland()
-        removeSmallWindow()
         removeFullscreenAlert()
     }
 
@@ -335,38 +220,6 @@ class OverlayService : Service() {
             }
             startActivity(homeIntent)
         }
-    }
-
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
-    }
-
-    private fun loadCharacterGif(imageView: ImageView) {
-        Glide.with(this)
-            .asGif()
-            .load(R.raw.study_guardian)
-            .into(imageView)
-    }
-
-    private fun applyBlur(view: View?, radius: Float) {
-        if (view == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-        view.setRenderEffect(RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP))
-    }
-
-    private fun applyGlassMotion(view: View?, distance: Float, duration: Long) {
-        if (view == null) return
-        view.animate()
-            .translationXBy(distance)
-            .translationYBy(distance / 2f)
-            .setDuration(duration)
-            .withEndAction {
-                view.animate()
-                    .translationX(0f)
-                    .translationY(0f)
-                    .setDuration(duration)
-                    .start()
-            }
-            .start()
     }
 
     override fun onDestroy() {
