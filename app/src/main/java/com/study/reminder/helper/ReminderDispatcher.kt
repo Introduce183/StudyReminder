@@ -7,8 +7,15 @@ import com.study.reminder.service.OverlayService
 
 object ReminderDispatcher {
 
-    fun dispatchFromPreferences(context: Context, message: String, emoji: String) {
-        StudyStatsRepository.recordDistraction(context)
+    fun dispatchFromPreferences(
+        context: Context,
+        message: String,
+        emoji: String,
+        recordDistraction: Boolean = false
+    ) {
+        if (recordDistraction) {
+            StudyStatsRepository.recordDistraction(context)
+        }
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
         dispatch(
             context = context,

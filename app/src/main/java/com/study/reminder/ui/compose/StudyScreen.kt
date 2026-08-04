@@ -36,11 +36,12 @@ fun StudyScreen() {
     var isStudying by remember { mutableStateOf(StudyStatsRepository.hasActiveSession(context)) }
     var isInSlot by remember { mutableStateOf(StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0) }
     var elapsedSeconds by remember { mutableStateOf(0) }
+    var statsRefreshToken by remember { mutableIntStateOf(0) }
 
-    val weekStats = remember(weekOffset) { StudyStatsRepository.getWeekStats(context, weekOffset) }
-    val prevWeekStats = remember(weekOffset) { StudyStatsRepository.getWeekStats(context, weekOffset - 1) }
-    val monthStats = remember(monthOffset) { StudyStatsRepository.getMonthStats(context, monthOffset) }
-    val prevMonthStats = remember(monthOffset) { StudyStatsRepository.getMonthStats(context, monthOffset - 1) }
+    val weekStats = remember(weekOffset, statsRefreshToken) { StudyStatsRepository.getWeekStats(context, weekOffset) }
+    val prevWeekStats = remember(weekOffset, statsRefreshToken) { StudyStatsRepository.getWeekStats(context, weekOffset - 1) }
+    val monthStats = remember(monthOffset, statsRefreshToken) { StudyStatsRepository.getMonthStats(context, monthOffset) }
+    val prevMonthStats = remember(monthOffset, statsRefreshToken) { StudyStatsRepository.getMonthStats(context, monthOffset - 1) }
     val weekDateRange = remember(weekOffset) { StudyStatsRepository.getWeekDateRange(weekOffset) }
     val monthLabel = remember(monthOffset) { StudyStatsRepository.getMonthLabel(monthOffset) }
 
@@ -62,6 +63,7 @@ fun StudyScreen() {
     fun refresh() {
         isStudying = StudyStatsRepository.hasActiveSession(context)
         isInSlot = StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0
+        statsRefreshToken++
     }
 
     fun startManualSession() {
@@ -87,7 +89,7 @@ fun StudyScreen() {
 
     LaunchedEffect(Unit) { refresh() }
 
-    val todayStats = remember(weekStats) { StudyStatsRepository.getTodayStats(context) }
+    val todayStats = remember(weekStats, statsRefreshToken) { StudyStatsRepository.getTodayStats(context) }
     val weekTotal = remember(weekStats) { weekStats.sumOf { it.totalMinutes } }
     val prevWeekTotal = remember(prevWeekStats) { prevWeekStats.sumOf { it.totalMinutes } }
     val weekDistraction = remember(weekStats) { weekStats.sumOf { it.distractionCount } }

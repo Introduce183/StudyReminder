@@ -213,13 +213,14 @@ private fun AddSlotScreen(
 
                     onConfirm(
                         StudySlot(
-                            id = initialSlot?.id ?: 0L,
                             label = label.trim().ifEmpty { "学习时间" },
                             startHour = sH, startMinute = sM,
                             endHour = eH, endMinute = eM,
                             enableDays = selectedDays,
                             enabled = initialSlot?.enabled ?: true
-                        )
+                        ).let { slot ->
+                            if (initialSlot != null) slot.copy(id = initialSlot.id) else slot
+                        }
                     )
                 },
                 modifier = Modifier

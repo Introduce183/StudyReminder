@@ -29,7 +29,10 @@ object IcsParser {
             try {
                 val parsed = parseVEvent(eventLines, warnings) ?: continue
                 allStartDates.add(parsed.startDate)
-                parsedEvents.add(parsed)
+                // Expand multi-day events: one RawVEvent per dayOfWeek
+                for (day in parsed.daysOfWeek) {
+                    parsedEvents.add(parsed.copy(daysOfWeek = listOf(day)))
+                }
             } catch (e: Exception) {
                 warnings.add("解析事件出错: ${e.message}")
             }
@@ -37,7 +40,7 @@ object IcsParser {
 
         // Group by (courseName, dayOfWeek, startHour, startMinute, endHour, endMinute)
         val grouped = parsedEvents.groupBy { ev ->
-            "${ev.summary}|${ev.dayOfWeek}|${ev.startHour}:${ev.startMinute}|${ev.endHour}:${ev.endMinute}"
+            "${ev.summary}|${ev.daysOfWeek.first()}|${ev.startHour}:${ev.startMinute}|${ev.endHour}:${ev.endMinute}"
         }
 
         val courses = mutableListOf<CourseSchedule>()
@@ -59,25 +62,38 @@ object IcsParser {
                     // Single event: only active on its exact date
                     weekRanges.add(listOf(ev.startDate, ev.startDate))
                 } else {
-                    val effectiveEnd = if (ev.untilDate.isNotEmpty()) {
-                        addDays(ev.untilDate, 6)
-                    } else {
-                        addWeeks(ev.startDate, 20)
-                    }
-                    if (maxInterval >= 2) {
-                        // Biweekly or higher interval: generate individual active weeks
+                    val maxCount = evts.maxOfOrNull { it.count } ?: 0
+                    if (maxCount > 0) {
+                        // COUNT specified: generate exact number of occurrences
                         var weekStart = ev.startDate
-                        while (weekStart <= effectiveEnd) {
+                        var remaining = maxCount
+                        while (remaining > 0) {
                             val weekEnd = addDays(weekStart, 6)
-                            if (weekEnd > effectiveEnd) {
-                                weekRanges.add(listOf(weekStart, effectiveEnd))
-                            } else {
-                                weekRanges.add(listOf(weekStart, weekEnd))
-                            }
+                            weekRanges.add(listOf(weekStart, weekEnd))
                             weekStart = addWeeks(weekStart, maxInterval)
+                            remaining--
                         }
                     } else {
-                        weekRanges.add(listOf(ev.startDate, effectiveEnd))
+                        val effectiveEnd = if (ev.untilDate.isNotEmpty()) {
+                            addDays(ev.untilDate, 6)
+                        } else {
+                            addWeeks(ev.startDate, 20)
+                        }
+                        if (maxInterval >= 2) {
+                            // Biweekly or higher interval: generate individual active weeks
+                            var weekStart = ev.startDate
+                            while (weekStart <= effectiveEnd) {
+                                val weekEnd = addDays(weekStart, 6)
+                                if (weekEnd > effectiveEnd) {
+                                    weekRanges.add(listOf(weekStart, effectiveEnd))
+                                } else {
+                                    weekRanges.add(listOf(weekStart, weekEnd))
+                                }
+                                weekStart = addWeeks(weekStart, maxInterval)
+                            }
+                        } else {
+                            weekRanges.add(listOf(ev.startDate, effectiveEnd))
+                        }
                     }
                 }
             }
@@ -96,7 +112,7 @@ object IcsParser {
                     startMinute = first.startMinute,
                     endHour = first.endHour,
                     endMinute = first.endMinute,
-                    dayOfWeek = first.dayOfWeek,
+                    dayOfWeek = first.daysOfWeek.first(),
                     weekRanges = merged,
                     exDates = allExDates
                 )
@@ -173,10 +189,11 @@ object IcsParser {
         val startMinute: Int,
         val endHour: Int,
         val endMinute: Int,
-        val dayOfWeek: Int,
+        val daysOfWeek: List<Int>,
         val untilDate: String,
         val isRecurring: Boolean,
         val interval: Int,
+        val count: Int,
         val exDates: Set<String>
     )
 
@@ -212,18 +229,20 @@ object IcsParser {
         val (_, endHour, endMinute) = if (dtEnd.isNotEmpty()) parseDateTime(dtEnd)
             else Triple(startDate, startHour + 1, startMinute)
 
-        // Parse RRULE for UNTIL, BYDAY, and INTERVAL
+        // Parse RRULE for UNTIL, BYDAY, INTERVAL, and COUNT
         val rruleMap = parseRRule(rrule)
         val untilStr = rruleMap["UNTIL"] ?: ""
         val untilDate = extractDate(untilStr)
         val byDayStr = rruleMap["BYDAY"] ?: ""
         val interval = rruleMap["INTERVAL"]?.toIntOrNull() ?: 1
+        val count = rruleMap["COUNT"]?.toIntOrNull() ?: 0
 
-        // Determine dayOfWeek: prefer RRULE BYDAY, fallback to DTSTART
-        val dayOfWeek = if (byDayStr.isNotEmpty()) {
-            parseBYDAY(byDayStr).firstOrNull() ?: dayOfWeekFromDateString(startDate)
+        // Determine daysOfWeek: prefer RRULE BYDAY, fallback to DTSTART
+        val daysOfWeek = if (byDayStr.isNotEmpty()) {
+            val parsed = parseBYDAY(byDayStr)
+            if (parsed.isNotEmpty()) parsed else listOf(dayOfWeekFromDateString(startDate))
         } else {
-            dayOfWeekFromDateString(startDate)
+            listOf(dayOfWeekFromDateString(startDate))
         }
 
         // Check FREQ=WEEKLY
@@ -241,10 +260,11 @@ object IcsParser {
             startMinute = startMinute,
             endHour = endHour,
             endMinute = endMinute,
-            dayOfWeek = dayOfWeek,
+            daysOfWeek = daysOfWeek,
             untilDate = untilDate,
             isRecurring = rrule.isNotEmpty(),
             interval = interval,
+            count = count,
             exDates = exDates
         )
     }

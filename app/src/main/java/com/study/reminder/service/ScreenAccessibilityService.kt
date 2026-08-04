@@ -97,7 +97,7 @@ class ScreenAccessibilityService : AccessibilityService() {
         }
 
         val (message, emoji) = com.study.reminder.helper.TauntHelper.random()
-        ReminderDispatcher.dispatchFromPreferences(this, message, emoji)
+        ReminderDispatcher.dispatchFromPreferences(this, message, emoji, recordDistraction = true)
     }
 
     private fun isInStudyTime(): Boolean {
