@@ -48,28 +48,28 @@ data class AppColorScheme(
 )
 
 val LightColors = AppColorScheme(
-    background = Color(0xFFF4FAF9),
-    surface = Color.White,
-    surfaceVariant = Color(0xFFF0F7F6),
-    card = Color(0xFFF8FFFE),
-    cardSoft = Color(0xFFEDF8F6),
-    textPrimary = Color(0xFF0D2F33),
-    textSecondary = Color(0xFF4A7A80),
-    textTertiary = Color(0xFF8AABAE),
+    background = Color(0xFF0A0A0A),
+    surface = Color(0xFF1A1A1A),
+    surfaceVariant = Color(0xFF1E1E1E),
+    card = Color(0xFF242424),
+    cardSoft = Color(0xFF1E1E1E),
+    textPrimary = Color(0xFFE8E8E8),
+    textSecondary = Color(0xFF999999),
+    textTertiary = Color(0xFF666666),
     accent = Accent,
     accentDark = AccentDark,
     accentPink = AccentPink,
     accentBlue = AccentBlue,
-    divider = Color(0x0C000000),
-    glassStroke = Color(0x30FFFFFF),
-    glassFill = Color(0xE6FFFFFF),
-    navBar = Color(0xF2FFFFFF),
-    infoBg = Color(0xFFE8FFF8),
-    infoText = Color(0xFF1A6B60),
+    divider = Color(0x15FFFFFF),
+    glassStroke = Color(0x20FFFFFF),
+    glassFill = Color(0xE61A1A1A),
+    navBar = Color(0xE61A1A1A),
+    infoBg = Color(0xFF1A2925),
+    infoText = Color(0xFF7ECEB8),
     white = Color.White,
-    inputBg = Color(0xFFF0F7F6),
-    success = Color(0xFF34C759),
-    error = Color(0xFFFF3B30)
+    inputBg = Color(0xFF1E1E1E),
+    success = Color(0xFF30D158),
+    error = Color(0xFFFF6961)
 )
 
 val DarkColors = AppColorScheme(
@@ -100,28 +100,28 @@ val DarkColors = AppColorScheme(
 // ── Backward-compatible AppColors object ─────────────────────
 
 object AppColors {
-    val Background = Color(0xFFF4FAF9)
-    val Surface = Color.White
-    val CardBg = Color(0xFFF8FFFE)
-    val CardBgSoft = Color(0xFFEDF8F6)
-    val CardSoft = Color(0xFFEDF8F6)
-    val TextPrimary = Color(0xFF0D2F33)
-    val TextSecondary = Color(0xFF4A7A80)
-    val TextTertiary = Color(0xFF8AABAE)
+    val Background = Color(0xFF0A0A0A)
+    val Surface = Color(0xFF1A1A1A)
+    val CardBg = Color(0xFF242424)
+    val CardBgSoft = Color(0xFF1E1E1E)
+    val CardSoft = Color(0xFF1E1E1E)
+    val TextPrimary = Color(0xFFE8E8E8)
+    val TextSecondary = Color(0xFF999999)
+    val TextTertiary = Color(0xFF666666)
     val Accent = Color(0xFF39C5BB)
     val AccentDark = Color(0xFF2AA89F)
     val AccentPink = Color(0xFFFF77B7)
     val AccentBlue = Color(0xFF5FD7FF)
-    val GlassStroke = Color(0x30FFFFFF)
-    val InfoBg = Color(0xFFE8FFF8)
-    val InfoText = Color(0xFF1A6B60)
+    val GlassStroke = Color(0x20FFFFFF)
+    val InfoBg = Color(0xFF1A2925)
+    val InfoText = Color(0xFF7ECEB8)
     val White = Color.White
-    val LightDivider = Color(0x0C000000)
-    val WeekSelectedBg = Color(0x0C000000)
-    val InputBg = Color(0xFFF0F7F6)
-    val Success = Color(0xFF34C759)
-    val Error = Color(0xFFFF3B30)
-    val NavBar = Color(0xF2FFFFFF)
+    val LightDivider = Color(0x15FFFFFF)
+    val WeekSelectedBg = Color(0x15FFFFFF)
+    val InputBg = Color(0xFF1E1E1E)
+    val Success = Color(0xFF30D158)
+    val Error = Color(0xFFFF6961)
+    val NavBar = Color(0xE61A1A1A)
 }
 
 // ── Typography ────────────────────────────────────────────────
@@ -216,13 +216,13 @@ private val StudyLightColors = lightColorScheme(
     onPrimary = Color.White,
     secondary = AccentPink,
     tertiary = AccentBlue,
-    background = Color(0xFFF4FAF9),
-    surface = Color.White,
-    surfaceVariant = Color(0xFFF0F7F6),
-    onSurface = Color(0xFF0D2F33),
-    onBackground = Color(0xFF0D2F33),
-    outline = Color(0xFFD0E8E4),
-    outlineVariant = Color(0xFFE8F0EF)
+    background = Color(0xFF0A0A0A),
+    surface = Color(0xFF1A1A1A),
+    surfaceVariant = Color(0xFF1E1E1E),
+    onSurface = Color(0xFFE8E8E8),
+    onBackground = Color(0xFFE8E8E8),
+    outline = Color(0xFF333333),
+    outlineVariant = Color(0xFF2A2A2A)
 )
 
 private val StudyDarkColors = darkColorScheme(
