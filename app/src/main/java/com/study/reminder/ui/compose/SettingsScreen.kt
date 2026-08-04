@@ -23,6 +23,7 @@ fun SettingsScreen(
     smallWindowEnabled: Boolean,
     fullScreenEnabled: Boolean,
     forceHomeEnabled: Boolean,
+    isDarkTheme: Boolean = true,
     onAddSlot: () -> Unit,
     onToggleSlot: (StudySlot) -> Unit,
     onDeleteSlot: (StudySlot) -> Unit,
@@ -33,7 +34,8 @@ fun SettingsScreen(
     onFullScreenChange: (Boolean) -> Unit,
     onForceHomeChange: (Boolean) -> Unit,
     onWhitelist: () -> Unit,
-    onAccessibilityGuide: () -> Unit
+    onAccessibilityGuide: () -> Unit,
+    onThemeChange: (Boolean) -> Unit = {}
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -150,6 +152,19 @@ fun SettingsScreen(
                         primary = false,
                         modifier = Modifier.weight(1f)
                     )
+                }
+            }
+
+            // Theme switch
+            item {
+                GlassCard(modifier = Modifier.padding(top = 14.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        OptionSwitch(
+                            label = if (isDarkTheme) "深色模式" else "浅色模式",
+                            checked = isDarkTheme,
+                            onCheckedChange = onThemeChange
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }

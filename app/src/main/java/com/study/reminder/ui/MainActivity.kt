@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
     private val smallWindowState = mutableStateOf(false)
     private val fullScreenState = mutableStateOf(false)
     private val forceHomeState = mutableStateOf(false)
+    private val isDarkThemeState = mutableStateOf(true)
 
     // Course schedule state
     private val coursesState = mutableStateListOf<CourseSchedule>()
@@ -124,7 +125,7 @@ class MainActivity : ComponentActivity() {
         loadCourses()
 
         setContent {
-            StudyReminderComposeTheme {
+            StudyReminderComposeTheme(darkTheme = isDarkThemeState.value) {
                 var selectedTab by remember { mutableStateOf(0) }
 
                 Scaffold(
@@ -273,6 +274,11 @@ class MainActivity : ComponentActivity() {
                         ) {
                             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                         }
+                    },
+                    isDarkTheme = isDarkThemeState.value,
+                    onThemeChange = { isDark ->
+                        isDarkThemeState.value = isDark
+                        saveThemePreference(isDark)
                     }
                 )
                         }
@@ -361,6 +367,7 @@ class MainActivity : ComponentActivity() {
         smallWindowState.value = prefs.getBoolean("opt_small_window", false)
         fullScreenState.value = prefs.getBoolean("opt_fullscreen", false)
         forceHomeState.value = prefs.getBoolean("opt_force_home", false)
+        isDarkThemeState.value = prefs.getBoolean("opt_dark_theme", true)
     }
 
     private fun saveOptions() {
@@ -370,6 +377,12 @@ class MainActivity : ComponentActivity() {
             putBoolean("opt_small_window", smallWindowState.value)
             putBoolean("opt_fullscreen", fullScreenState.value)
             putBoolean("opt_force_home", forceHomeState.value)
+        }.apply()
+    }
+
+    private fun saveThemePreference(isDark: Boolean) {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().apply {
+            putBoolean("opt_dark_theme", isDark)
         }.apply()
     }
 

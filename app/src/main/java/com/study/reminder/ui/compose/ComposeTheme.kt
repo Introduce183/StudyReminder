@@ -124,6 +124,32 @@ object AppColors {
     val NavBar = Color(0xF0141414)
 }
 
+// Light theme colors
+object LightAppColors {
+    val Background = Color(0xFFF4FAF9)
+    val Surface = Color.White
+    val CardBg = Color(0xFFF8FFFE)
+    val CardBgSoft = Color(0xFFEDF8F6)
+    val CardSoft = Color(0xFFEDF8F6)
+    val TextPrimary = Color(0xFF0D2F33)
+    val TextSecondary = Color(0xFF4A7A80)
+    val TextTertiary = Color(0xFF8AABAE)
+    val Accent = Color(0xFF39C5BB)
+    val AccentDark = Color(0xFF2AA89F)
+    val AccentPink = Color(0xFFFF77B7)
+    val AccentBlue = Color(0xFF5FD7FF)
+    val GlassStroke = Color(0x30FFFFFF)
+    val InfoBg = Color(0xFFE8FFF8)
+    val InfoText = Color(0xFF1A6B60)
+    val White = Color.White
+    val LightDivider = Color(0x0C000000)
+    val WeekSelectedBg = Color(0x0C000000)
+    val InputBg = Color(0xFFF0F7F6)
+    val Success = Color(0xFF34C759)
+    val Error = Color(0xFFFF3B30)
+    val NavBar = Color(0xF2FFFFFF)
+}
+
 // ── Typography ────────────────────────────────────────────────
 
 val AppTypography = Typography(
@@ -249,4 +275,11 @@ fun StudyReminderComposeTheme(
         typography = AppTypography,
         content = content
     )
+}
+
+// Composable function to get current theme colors
+@Composable
+fun currentAppColors(): AppColorScheme {
+    val isDark = isSystemInDarkTheme()
+    return if (isDark) DarkColors else LightColors
 }
