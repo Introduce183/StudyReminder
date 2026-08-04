@@ -21,7 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.study.reminder.R
+import com.study.reminder.helper.SlotScheduler
 import com.study.reminder.model.DayStats
+import com.study.reminder.model.SlotRepository
 import com.study.reminder.model.StudyStatsRepository
 import com.study.reminder.service.TimerService
 import kotlinx.coroutines.delay
@@ -49,10 +51,16 @@ fun StudyScreen() {
         if (isStudying) {
             val prefs = context.getSharedPreferences("study_prefs", android.content.Context.MODE_PRIVATE)
             val startMs = prefs.getLong("active_session_start", 0L)
+            var updateCounter = 0
             while (true) {
                 isStudying = StudyStatsRepository.hasActiveSession(context)
                 if (!isStudying) break
                 elapsedSeconds = ((System.currentTimeMillis() - startMs) / 1000).toInt().coerceAtLeast(0)
+                // 每分钟更新一次统计数据
+                updateCounter++
+                if (updateCounter % 60 == 0) {
+                    statsRefreshToken++
+                }
                 delay(1000L)
             }
         } else {
@@ -79,11 +87,22 @@ fun StudyScreen() {
     }
 
     fun endStudySession() {
+        // 获取当前活跃的时间段 ID
+        val prefs = context.getSharedPreferences("study_prefs", android.content.Context.MODE_PRIVATE)
+        val activeSlotId = prefs.getLong("active_slot_id", -1L)
+
         StudyStatsRepository.endSession(context)
         val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
             action = TimerService.ACTION_STOP
         }
         context.startService(serviceIntent)
+
+        // 如果是从时间段开始的学习，自动禁用该时间段
+        if (activeSlotId >= 0) {
+            SlotRepository.toggleSlot(context, activeSlotId)
+            SlotScheduler.rescheduleAll(context)
+        }
+
         refresh()
     }
 

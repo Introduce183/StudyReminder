@@ -101,6 +101,16 @@ object StudyStatsRepository {
     }
 
     /**
+     * 获取当前活跃会话的已持续分钟数，没有活跃会话返回 0
+     */
+    fun getActiveSessionMinutes(context: Context): Int {
+        val startMs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+            .getLong(PREF_ACTIVE_START, 0L)
+        if (startMs <= 0L) return 0
+        return ((System.currentTimeMillis() - startMs) / 60_000).toInt().coerceAtLeast(0)
+    }
+
+    /**
      * 检查当前是否在某个学习时间段内，返回剩余分钟数（不在任何时间段内返回 0）
      */
     fun getActiveSlotRemainingMinutes(context: Context): Int {
@@ -205,7 +215,8 @@ object StudyStatsRepository {
         val today = dateFormat.format(Date())
         val sessions = getSessions(context).filter { it.date == today }
         val distractions = getDistractions(context).count { it.date == today }
-        return DayStats(today, "今日", sessions.sumOf { it.durationMin }, distractions, sessions.size)
+        val activeMinutes = getActiveSessionMinutes(context)
+        return DayStats(today, "今日", sessions.sumOf { it.durationMin } + activeMinutes, distractions, sessions.size)
     }
 
     fun getWeekStats(context: Context, weekOffset: Int = 0): List<DayStats> {
@@ -219,11 +230,15 @@ object StudyStatsRepository {
         val dayNames = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
         val result = mutableListOf<DayStats>()
 
+        val today = dateFormat.format(Date())
+        val activeMinutes = getActiveSessionMinutes(context)
+
         for (i in 0 until 7) {
             val date = dateFormat.format(cal.time)
             val daySessions = sessions.filter { it.date == date }
             val dayDistractions = distractions.count { it.date == date }
-            result.add(DayStats(date, dayNames[i], daySessions.sumOf { it.durationMin }, dayDistractions, daySessions.size))
+            val extraMinutes = if (date == today) activeMinutes else 0
+            result.add(DayStats(date, dayNames[i], daySessions.sumOf { it.durationMin } + extraMinutes, dayDistractions, daySessions.size))
             cal.add(Calendar.DAY_OF_YEAR, 1)
         }
         return result
@@ -253,12 +268,16 @@ object StudyStatsRepository {
         val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
         val result = mutableListOf<DayStats>()
 
+        val today = dateFormat.format(Date())
+        val activeMinutes = getActiveSessionMinutes(context)
+
         for (day in 1..daysInMonth) {
             cal.set(Calendar.DAY_OF_MONTH, day)
             val date = dateFormat.format(cal.time)
             val daySessions = sessions.filter { it.date == date }
             val dayDistractions = distractions.count { it.date == date }
-            result.add(DayStats(date, "$day", daySessions.sumOf { it.durationMin }, dayDistractions, daySessions.size))
+            val extraMinutes = if (date == today) activeMinutes else 0
+            result.add(DayStats(date, "$day", daySessions.sumOf { it.durationMin } + extraMinutes, dayDistractions, daySessions.size))
         }
         return result
     }
