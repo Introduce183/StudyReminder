@@ -1,7 +1,6 @@
 # StudyReminder 项目交接文档
 
-> 由 Claude (Opus 4.7) 在多个深度审计会话中编写
-> 最后更新: 2026-06-11 | 版本: v1.MIMO (versionCode 40)
+> 最后更新: 2026-08-04 | 版本: v2.3 (versionCode 61)
 
 ---
 
