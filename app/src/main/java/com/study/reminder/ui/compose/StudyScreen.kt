@@ -91,19 +91,15 @@ fun StudyScreen(
     }
 
     fun endStudySession() {
-        // 获取当前活跃的时间段 ID
-        val prefs = context.getSharedPreferences("study_prefs", android.content.Context.MODE_PRIVATE)
-        val activeSlotId = prefs.getLong("active_slot_id", -1L)
-
         StudyStatsRepository.endSession(context)
         val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
             action = TimerService.ACTION_STOP
         }
         context.startService(serviceIntent)
 
-        // 如果是手动开始的学习（有时间段ID），自动禁用所有活跃的时间段
-        if (activeSlotId >= 0) {
-            val activeSlotIds = StudyStatsRepository.getActiveSlotIds(context)
+        // 结束学习时，自动禁用所有活跃的时间段
+        val activeSlotIds = StudyStatsRepository.getActiveSlotIds(context)
+        if (activeSlotIds.isNotEmpty()) {
             for (id in activeSlotIds) {
                 SlotRepository.disableSlot(context, id)
             }
