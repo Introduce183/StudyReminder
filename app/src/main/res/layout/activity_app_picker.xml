@@ -5,34 +5,33 @@
     android:orientation="vertical"
     android:background="@color/bg_main">
 
-    <!-- 搜索框 -->
     <EditText
         android:id="@+id/et_search_app"
         android:layout_width="match_parent"
         android:layout_height="52dp"
         android:hint="🔍 搜索应用名称"
         android:paddingHorizontal="16dp"
-        android:background="@color/card_bg"
-        android:textSize="15sp"
+        android:background="@color/input_bg"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_tertiary"
+        android:textSize="14sp"
         android:inputType="text"
         android:imeOptions="actionSearch"
         android:singleLine="true" />
 
     <View android:layout_width="match_parent" android:layout_height="1dp"
-        android:background="#EEEEEE"/>
+        android:background="@color/glass_stroke"/>
 
-    <!-- 说明 -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="勾选后，学习时间内打开该应用不会触发提醒"
         android:textSize="12sp"
-        android:textColor="#888888"
+        android:textColor="@color/text_secondary"
         android:paddingHorizontal="16dp"
         android:paddingVertical="8dp"
         android:background="@color/bg_main"/>
 
-    <!-- 加载中 -->
     <ProgressBar
         android:id="@+id/progress_apps"
         android:layout_width="wrap_content"
@@ -41,7 +40,6 @@
         android:visibility="gone"
         android:layout_marginTop="40dp"/>
 
-    <!-- 应用列表 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_apps"
         android:layout_width="match_parent"

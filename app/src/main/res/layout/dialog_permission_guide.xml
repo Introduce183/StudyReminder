@@ -13,14 +13,14 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp"
-        android:background="#D1D5DB" />
+        android:background="@color/text_tertiary" />
 
     <TextView
         android:id="@+id/tv_sheet_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
-        android:textColor="#111827"
+        android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
         android:lineSpacingExtra="4dp"
-        android:textColor="#4B5563"
+        android:textColor="@color/text_secondary"
         android:textSize="14sp" />
 
     <Button

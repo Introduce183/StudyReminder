@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:text="该学习啦！"
             android:textSize="15sp"
-            android:textColor="#F5FFFF"
+            android:textColor="@color/white"
             android:maxWidth="240dp"
             android:maxLines="2"
             android:ellipsize="end" />

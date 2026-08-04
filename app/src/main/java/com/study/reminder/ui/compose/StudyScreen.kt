@@ -29,7 +29,7 @@ import kotlinx.coroutines.delay
 fun StudyScreen() {
     val context = LocalContext.current
 
-    var selectedTab by remember { mutableStateOf(0) } // 0=周, 1=月
+    var selectedTab by remember { mutableStateOf(0) }
     var weekOffset by remember { mutableIntStateOf(0) }
     var monthOffset by remember { mutableIntStateOf(0) }
     var isStudying by remember { mutableStateOf(StudyStatsRepository.hasActiveSession(context)) }
@@ -43,7 +43,6 @@ fun StudyScreen() {
     val weekDateRange = remember(weekOffset) { StudyStatsRepository.getWeekDateRange(weekOffset) }
     val monthLabel = remember(monthOffset) { StudyStatsRepository.getMonthLabel(monthOffset) }
 
-    // 计算已学习秒数（自动刷新）
     LaunchedEffect(isStudying) {
         if (isStudying) {
             val prefs = context.getSharedPreferences("study_prefs", android.content.Context.MODE_PRIVATE)
@@ -102,23 +101,22 @@ fun StudyScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            // 标题
+            // Title
             Text(
                 text = stringResource(R.string.study_statistics),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineLarge,
                 color = AppColors.TextPrimary,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
-            // 学习状态卡片
-            GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
+            // Study status card
+            GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (isStudying) {
@@ -127,18 +125,20 @@ fun StudyScreen() {
                         val s = elapsedSeconds % 60
                         Text(
                             text = stringResource(R.string.studying),
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             color = AppColors.Accent,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = String.format("%02d:%02d:%02d", h, m, s),
-                            fontSize = 36.sp,
+                            fontSize = 38.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppColors.TextPrimary
+                            color = AppColors.TextPrimary,
+                            letterSpacing = 1.sp
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         LiquidGlassButton(
                             text = stringResource(R.string.end_study),
                             primary = false,
@@ -147,10 +147,10 @@ fun StudyScreen() {
                     } else {
                         Text(
                             text = stringResource(if (isInSlot) R.string.in_study_slot else R.string.not_in_study_slot),
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             color = AppColors.TextSecondary
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         LiquidGlassButton(
                             text = stringResource(R.string.start_study),
                             onClick = { startManualSession() }
@@ -159,15 +159,14 @@ fun StudyScreen() {
                 }
             }
 
-            // 今日概览卡片
-            GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            // Today overview
+            GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Text(
                         text = stringResource(R.string.today_overview),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
                         color = AppColors.TextPrimary,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = 14.dp)
                     )
                     Row(modifier = Modifier.fillMaxWidth()) {
                         StatCard(
@@ -187,9 +186,9 @@ fun StudyScreen() {
                 }
             }
 
-            // 周/月切换
-            GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            // Week/Month switch
+            GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center
@@ -199,19 +198,17 @@ fun StudyScreen() {
                         TabButton(stringResource(R.string.this_month), selectedTab == 1) { selectedTab = 1 }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     if (selectedTab == 0) {
-                        // 周导航
                         PeriodNavigator(
                             label = "${weekDateRange.first} ~ ${weekDateRange.second}",
                             canGoNext = weekOffset < 0,
                             onPrev = { weekOffset-- },
                             onNext = { if (weekOffset < 0) weekOffset++ }
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // 周汇总 + 对比
                         Row(modifier = Modifier.fillMaxWidth()) {
                             StatCard(
                                 label = stringResource(R.string.week_total),
@@ -231,23 +228,21 @@ fun StudyScreen() {
                             Spacer(modifier = Modifier.height(8.dp))
                             ComparisonText(current = weekTotal, previous = prevWeekTotal, period = "周")
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
                         BarChart(
                             data = weekStats.map { it.totalMinutes },
                             labels = weekStats.map { it.label },
                             maxValue = (weekStats.maxOfOrNull { it.totalMinutes } ?: 60).coerceAtLeast(30)
                         )
                     } else {
-                        // 月导航
                         PeriodNavigator(
                             label = monthLabel,
                             canGoNext = monthOffset < 0,
                             onPrev = { monthOffset-- },
                             onNext = { if (monthOffset < 0) monthOffset++ }
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // 月汇总 + 对比
                         Row(modifier = Modifier.fillMaxWidth()) {
                             StatCard(
                                 label = stringResource(R.string.month_total),
@@ -262,7 +257,7 @@ fun StudyScreen() {
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
                         ScrollableBarChart(
                             data = monthStats.map { it.totalMinutes },
                             labels = monthStats.map { it.label },
@@ -289,28 +284,28 @@ private fun PeriodNavigator(
     ) {
         Text(
             text = "◀",
-            fontSize = 16.sp,
-            color = Color(0xFF39C5BB),
+            fontSize = 14.sp,
+            color = AppColors.Accent,
             modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(6.dp))
                 .clickable { onPrev() }
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .padding(horizontal = 10.dp, vertical = 6.dp)
         )
         Text(
             text = label,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF10393F),
+            color = AppColors.TextPrimary,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
         Text(
             text = "▶",
-            fontSize = 16.sp,
-            color = if (canGoNext) Color(0xFF39C5BB) else Color(0x44000000),
+            fontSize = 14.sp,
+            color = if (canGoNext) AppColors.Accent else AppColors.TextTertiary,
             modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(6.dp))
                 .then(if (canGoNext) Modifier.clickable { onNext() } else Modifier)
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }
 }
@@ -341,11 +336,11 @@ private fun ComparisonText(current: Int, previous: Int, period: String) {
 private fun ComparisonCard(current: Int, previous: Int, modifier: Modifier = Modifier) {
     val diff = current - previous
     val text = if (diff > 0) "+${formatMinutes(diff)}" else if (diff < 0) formatMinutes(diff) else "0"
-    val label = if (previous > 0) "较上月" else "较上月"
+    val label = "较上月"
     val color = if (diff > 0) AppColors.Accent else if (diff < 0) AppColors.AccentPink else AppColors.TextSecondary
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(CornerRadius.lg),
         color = AppColors.CardBgSoft,
         modifier = modifier
     ) {
@@ -362,7 +357,7 @@ private fun ComparisonCard(current: Int, previous: Int, modifier: Modifier = Mod
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = AppColors.TextSecondary
             )
         }
@@ -377,7 +372,7 @@ private fun StatCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(CornerRadius.lg),
         color = AppColors.CardBgSoft,
         modifier = modifier
     ) {
@@ -394,7 +389,7 @@ private fun StatCard(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = AppColors.TextSecondary
             )
         }
@@ -403,7 +398,7 @@ private fun StatCard(
 
 @Composable
 private fun TabButton(text: String, selected: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(CornerRadius.md)
     Surface(
         shape = shape,
         color = if (selected) AppColors.Accent else AppColors.CardBgSoft,
@@ -411,8 +406,8 @@ private fun TabButton(text: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             text = text,
-            fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) AppColors.White else AppColors.TextSecondary,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
         )
@@ -426,7 +421,7 @@ private fun BarChart(
     maxValue: Int
 ) {
     val barColor = AppColors.Accent
-    val barBg = Color(0x2239C5BB)
+    val barBg = Color(0x1839C5BB)
     val barHeight = 100.dp
     val labelHeight = 18.dp
 
@@ -440,7 +435,6 @@ private fun BarChart(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Value label — fixed height so all columns are same total height
                 Box(
                     modifier = Modifier.height(labelHeight),
                     contentAlignment = Alignment.Center
@@ -453,11 +447,10 @@ private fun BarChart(
                         )
                     }
                 }
-                // Bar
                 val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
                 Box(
                     modifier = Modifier
-                        .width(16.dp)
+                        .width(14.dp)
                         .height(barHeight)
                 ) {
                     Box(
@@ -477,7 +470,6 @@ private fun BarChart(
                         )
                     }
                 }
-                // Day label — fixed height
                 Box(
                     modifier = Modifier.height(16.dp),
                     contentAlignment = Alignment.Center
@@ -501,7 +493,7 @@ private fun ScrollableBarChart(
     maxValue: Int
 ) {
     val barColor = AppColors.Accent
-    val barBg = Color(0x2239C5BB)
+    val barBg = Color(0x1839C5BB)
     val barWidth = 24.dp
     val barHeight = 100.dp
     val valueLabelHeight = 18.dp
@@ -528,7 +520,6 @@ private fun ScrollableBarChart(
                 modifier = Modifier.width(barWidth),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Value label — fixed height
                 Box(
                     modifier = Modifier.height(valueLabelHeight),
                     contentAlignment = Alignment.Center
@@ -541,7 +532,6 @@ private fun ScrollableBarChart(
                         )
                     }
                 }
-                // Bar
                 val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
                 Box(
                     modifier = Modifier
@@ -565,7 +555,6 @@ private fun ScrollableBarChart(
                         )
                     }
                 }
-                // Day label — fixed height
                 val dayNum = index + 1
                 Box(
                     modifier = Modifier.height(dayLabelHeight),

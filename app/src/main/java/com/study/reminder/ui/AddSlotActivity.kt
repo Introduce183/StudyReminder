@@ -30,6 +30,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.model.StudySlot
+import com.study.reminder.ui.compose.AppColors
+import com.study.reminder.ui.compose.CornerRadius
 import com.study.reminder.ui.compose.GlassCard
 import com.study.reminder.ui.compose.LiquidGlassButton
 import com.study.reminder.ui.compose.StudyReminderComposeTheme
@@ -83,7 +85,7 @@ private fun AddSlotScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFEAFBF8)
+        color = AppColors.Background
     ) {
         Column(
             modifier = Modifier
@@ -91,28 +93,28 @@ private fun AddSlotScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // 备注
-            GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
+            // Note
+            GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "备注（可选）",
-                        fontSize = 13.sp,
-                        color = Color(0xFF888888),
+                        fontSize = 12.sp,
+                        color = AppColors.TextTertiary,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     BasicTextField(
                         value = label,
                         onValueChange = { label = it },
                         modifier = Modifier.fillMaxWidth(),
-                        textStyle = TextStyle(fontSize = 15.sp, color = Color(0xFF10393F)),
-                        cursorBrush = SolidColor(Color(0xFF39C5BB)),
+                        textStyle = TextStyle(fontSize = 15.sp, color = AppColors.TextPrimary),
+                        cursorBrush = SolidColor(AppColors.Accent),
                         decorationBox = { innerTextField ->
                             Box {
                                 if (label.isEmpty()) {
                                     Text(
                                         text = "如：上午自习、晚间复习",
                                         fontSize = 15.sp,
-                                        color = Color(0xFFBBBBBB)
+                                        color = AppColors.TextTertiary
                                     )
                                 }
                                 innerTextField()
@@ -122,14 +124,14 @@ private fun AddSlotScreen(
                 }
             }
 
-            // 开始时间
-            GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
+            // Start time
+            GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "🕐 开始时间",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333333),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.TextPrimary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     TimeInputRow(
@@ -141,14 +143,14 @@ private fun AddSlotScreen(
                 }
             }
 
-            // 结束时间
-            GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
+            // End time
+            GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "🕑 结束时间",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333333),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.TextPrimary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     TimeInputRow(
@@ -160,14 +162,14 @@ private fun AddSlotScreen(
                 }
             }
 
-            // 重复日期
+            // Repeat days
             GlassCard(modifier = Modifier.padding(bottom = 24.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "📅 重复日期",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333333),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.TextPrimary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     DaySelector(
@@ -179,7 +181,7 @@ private fun AddSlotScreen(
                 }
             }
 
-            // 按钮
+            // Buttons
             LiquidGlassButton(
                 text = if (isEditing) "确认修改" else "确认添加",
                 onClick = {
@@ -211,7 +213,7 @@ private fun AddSlotScreen(
 
                     onConfirm(
                         StudySlot(
-                            id = initialSlot?.id ?: 0L, // 0 triggers AtomicLong default
+                            id = initialSlot?.id ?: 0L,
                             label = label.trim().ifEmpty { "学习时间" },
                             startHour = sH, startMinute = sM,
                             endHour = eH, endMinute = eM,
@@ -258,6 +260,7 @@ private fun TimeInputRow(
             text = ":",
             fontSize = 36.sp,
             fontWeight = FontWeight.Bold,
+            color = AppColors.TextPrimary,
             modifier = Modifier
                 .width(40.dp)
                 .padding(top = 16.dp),
@@ -287,8 +290,8 @@ private fun TimeField(
     ) {
         Text(
             text = label,
-            fontSize = 12.sp,
-            color = Color(0xFFAAAAAA),
+            fontSize = 11.sp,
+            color = AppColors.TextTertiary,
             modifier = Modifier.padding(bottom = 6.dp)
         )
         BasicTextField(
@@ -297,17 +300,17 @@ private fun TimeField(
             modifier = Modifier
                 .width(90.dp)
                 .height(60.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xDDF9F4))
-                .border(1.dp, Color(0x90FFFFFF), RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(CornerRadius.md))
+                .background(AppColors.InputBg)
+                .border(1.dp, AppColors.GlassStroke, RoundedCornerShape(CornerRadius.md)),
             textStyle = TextStyle(
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF10393F),
+                color = AppColors.TextPrimary,
                 textAlign = TextAlign.Center
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            cursorBrush = SolidColor(Color(0xFF39C5BB)),
+            cursorBrush = SolidColor(AppColors.Accent),
             singleLine = true,
             decorationBox = { innerTextField ->
                 Box(
@@ -319,7 +322,7 @@ private fun TimeField(
                             text = hint,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFCCCCCC)
+                            color = AppColors.TextTertiary
                         )
                     }
                     innerTextField()
@@ -343,18 +346,18 @@ private fun DaySelector(
         dayLabels.forEachIndexed { index, label ->
             val day = index + 1
             val isSelected = day in selectedDays
-            val shape = RoundedCornerShape(12.dp)
+            val shape = RoundedCornerShape(CornerRadius.md)
 
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(shape)
                     .background(
-                        if (isSelected) Color(0xFF39C5BB) else Color(0xDDF9F4)
+                        if (isSelected) AppColors.Accent else AppColors.InputBg
                     )
                     .border(
                         1.dp,
-                        if (isSelected) Color(0xFF39C5BB) else Color(0x90FFFFFF),
+                        if (isSelected) AppColors.Accent else AppColors.GlassStroke,
                         shape
                     )
                     .clickable { onToggle(day) },
@@ -363,8 +366,8 @@ private fun DaySelector(
                 Text(
                     text = label,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isSelected) Color.White else Color(0xFF4E7F84)
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isSelected) Color.White else AppColors.TextSecondary
                 )
             }
         }

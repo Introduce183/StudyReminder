@@ -7,7 +7,11 @@
         <item name="colorSecondary">@color/accent_pink</item>
         <item name="colorTertiary">@color/accent_blue</item>
         <item name="colorSurface">@color/card_bg</item>
-        <item name="colorOutline">@color/accent_light</item>
+        <item name="colorSurfaceVariant">@color/card_bg_soft</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOutline">@color/text_tertiary</item>
+        <item name="colorOutlineVariant">@color/glass_stroke</item>
         <item name="colorControlActivated">@color/accent</item>
         <item name="android:windowBackground">@color/bg_main</item>
     </style>
@@ -26,12 +30,10 @@
         <item name="android:paddingLeft">18dp</item>
         <item name="android:paddingRight">18dp</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.02</item>
         <item name="android:elevation">0dp</item>
         <item name="android:stateListAnimator">@null</item>
-        <item name="android:shadowColor">#66000000</item>
-        <item name="android:shadowDx">0</item>
-        <item name="android:shadowDy">1</item>
-        <item name="android:shadowRadius">6</item>
     </style>
 
     <style name="Widget.StudyReminder.Button.Secondary" parent="Widget.Material3.Button">
@@ -41,6 +43,8 @@
         <item name="android:paddingLeft">18dp</item>
         <item name="android:paddingRight">18dp</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.02</item>
         <item name="android:elevation">0dp</item>
         <item name="android:stateListAnimator">@null</item>
     </style>

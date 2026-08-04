@@ -18,11 +18,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import com.study.reminder.ui.compose.AppColors
+import com.study.reminder.ui.compose.CornerRadius
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.study.reminder.R
 import com.study.reminder.helper.CourseScheduler
@@ -122,47 +130,37 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         NavigationBar(
-                            containerColor = Color(0xCCF7FFFF),
-                            contentColor = Color(0xFF10393F)
+                            containerColor = AppColors.NavBar,
+                            tonalElevation = 0.dp,
+                            modifier = Modifier
                         ) {
+                            val navColors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AppColors.Accent,
+                                selectedTextColor = AppColors.Accent,
+                                indicatorColor = AppColors.Accent.copy(alpha = 0.12f),
+                                unselectedIconColor = AppColors.TextTertiary,
+                                unselectedTextColor = AppColors.TextTertiary
+                            )
                             NavigationBarItem(
                                 selected = selectedTab == 0,
                                 onClick = { selectedTab = 0 },
-                                icon = { Text("📊") },
+                                icon = { Icon(Icons.Default.Home, contentDescription = "学习") },
                                 label = { Text("学习") },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Color(0xFF39C5BB),
-                                    selectedTextColor = Color(0xFF39C5BB),
-                                    indicatorColor = Color(0x3339C5BB),
-                                    unselectedIconColor = Color(0xFF4E7F84),
-                                    unselectedTextColor = Color(0xFF4E7F84)
-                                )
+                                colors = navColors
                             )
                             NavigationBarItem(
                                 selected = selectedTab == 1,
                                 onClick = { selectedTab = 1 },
-                                icon = { Text("📅") },
+                                icon = { Icon(Icons.Default.List, contentDescription = "课表") },
                                 label = { Text("课表") },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Color(0xFF39C5BB),
-                                    selectedTextColor = Color(0xFF39C5BB),
-                                    indicatorColor = Color(0x3339C5BB),
-                                    unselectedIconColor = Color(0xFF4E7F84),
-                                    unselectedTextColor = Color(0xFF4E7F84)
-                                )
+                                colors = navColors
                             )
                             NavigationBarItem(
                                 selected = selectedTab == 2,
                                 onClick = { selectedTab = 2 },
-                                icon = { Text("⚙️") },
+                                icon = { Icon(Icons.Default.Settings, contentDescription = "设置") },
                                 label = { Text("设置") },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Color(0xFF39C5BB),
-                                    selectedTextColor = Color(0xFF39C5BB),
-                                    indicatorColor = Color(0x3339C5BB),
-                                    unselectedIconColor = Color(0xFF4E7F84),
-                                    unselectedTextColor = Color(0xFF4E7F84)
-                                )
+                                colors = navColors
                             )
                         }
                     }

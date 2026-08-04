@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg_main">#EAFBF8</color>
-    <color name="card_bg">#F7FFFE</color>
-    <color name="card_bg_soft">#DDF9F4</color>
-    <color name="text_primary">#10393F</color>
-    <color name="text_secondary">#4E7F84</color>
+    <color name="bg_main">#F4FAF9</color>
+    <color name="card_bg">#F8FFFE</color>
+    <color name="card_bg_soft">#EDF8F6</color>
+    <color name="text_primary">#0D2F33</color>
+    <color name="text_secondary">#4A7A80</color>
+    <color name="text_tertiary">#8AABAE</color>
     <color name="accent">#39C5BB</color>
-    <color name="accent_dark">#228E97</color>
+    <color name="accent_dark">#2AA89F</color>
     <color name="accent_light">#8BF2E7</color>
     <color name="accent_pink">#FF77B7</color>
     <color name="accent_blue">#5FD7FF</color>
-    <color name="glass_stroke">#90FFFFFF</color>
-    <color name="glass_fill">#CCF7FFFF</color>
+    <color name="glass_stroke">#30FFFFFF</color>
+    <color name="glass_fill">#E6FFFFFF</color>
     <color name="glass_fill_dark">#B3223E46</color>
-    <color name="info_bg">#E8FFFA</color>
-    <color name="info_text">#17646B</color>
+    <color name="info_bg">#E8FFF8</color>
+    <color name="info_text">#1A6B60</color>
+    <color name="nav_bar">#F2FFFFFF</color>
+    <color name="input_bg">#F0F7F6</color>
     <color name="white">#FFFFFF</color>
 </resources>

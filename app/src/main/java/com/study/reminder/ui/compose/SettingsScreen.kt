@@ -3,13 +3,13 @@ package com.study.reminder.ui.compose
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.R
@@ -37,26 +37,26 @@ fun SettingsScreen(
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFEAFBF8)
+        color = AppColors.Background
     ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             item {
                 Text(
                     text = stringResource(R.string.settings_title),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF10393F),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = AppColors.TextPrimary,
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
             }
 
+            // Study slots section
             item {
-                GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -64,9 +64,8 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 text = stringResource(R.string.study_slots),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF10393F)
+                                style = MaterialTheme.typography.titleMedium,
+                                color = AppColors.TextPrimary
                             )
                             LiquidGlassButton(
                                 text = stringResource(R.string.add_slot),
@@ -77,12 +76,12 @@ fun SettingsScreen(
                         if (slots.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.no_slot_hint),
-                                color = Color(0xFF4E7F84),
+                                color = AppColors.TextSecondary,
                                 fontSize = 13.sp,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(20.dp),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -98,15 +97,15 @@ fun SettingsScreen(
                 )
             }
 
+            // Reminder methods section
             item {
-                GlassCard(modifier = Modifier.padding(bottom = 16.dp)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                GlassCard(modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Text(
                             text = stringResource(R.string.remind_method),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10393F),
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            style = MaterialTheme.typography.titleMedium,
+                            color = AppColors.TextPrimary,
+                            modifier = Modifier.padding(bottom = 14.dp)
                         )
                         OptionSwitch(stringResource(R.string.notification_remind), notificationEnabled, onNotificationChange)
                         OptionSwitch(stringResource(R.string.island_remind), islandEnabled, onIslandChange)
@@ -117,22 +116,24 @@ fun SettingsScreen(
                 }
             }
 
+            // Info hint
             item {
                 Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    color = Color(0xE8FFFA),
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    shape = RoundedCornerShape(CornerRadius.xl),
+                    color = AppColors.InfoBg,
+                    modifier = Modifier.padding(bottom = 14.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.slot_info_hint),
-                        fontSize = 13.sp,
-                        color = Color(0xFF17646B),
+                        fontSize = 12.sp,
+                        color = AppColors.InfoText,
                         modifier = Modifier.padding(14.dp),
                         lineHeight = 18.sp
                     )
                 }
             }
 
+            // Action buttons
             item {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     LiquidGlassButton(
@@ -171,12 +172,20 @@ fun OptionSwitch(
     ) {
         Text(
             text = label,
-            color = Color(0xFF10393F),
+            color = AppColors.TextPrimary,
+            fontSize = 14.sp,
             modifier = Modifier.weight(1f)
         )
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = AppColors.White,
+                checkedTrackColor = AppColors.Accent,
+                uncheckedThumbColor = AppColors.White,
+                uncheckedTrackColor = AppColors.TextTertiary,
+                uncheckedBorderColor = AppColors.TextTertiary
+            )
         )
     }
 }

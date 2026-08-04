@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:text="学习监督者"
-            android:textColor="#E8FFFE"
+            android:textColor="@color/white"
             android:textSize="14sp" />
 
         <androidx.cardview.widget.CardView
@@ -54,7 +54,7 @@
                 android:lineSpacingMultiplier="1.3"
                 android:padding="24dp"
                 android:text="还在玩？！学习时间到了！！"
-                android:textColor="#12393E"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
         </androidx.cardview.widget.CardView>

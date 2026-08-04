@@ -10,6 +10,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,11 +25,28 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import com.study.reminder.model.StudySlot
 
-// ── 液态玻璃按钮 ──────────────────────────────────────────────
+// ── Glass Card ────────────────────────────────────────────────
+
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(CornerRadius.xl)
+    Surface(
+        modifier = modifier,
+        shape = shape,
+        color = AppColors.CardBg,
+        shadowElevation = 1.dp,
+        border = BorderStroke(1.dp, AppColors.GlassStroke)
+    ) {
+        Column(content = content)
+    }
+}
+
+// ── Liquid Glass Button ───────────────────────────────────────
 
 @Composable
 fun LiquidGlassButton(
@@ -40,46 +59,37 @@ fun LiquidGlassButton(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.965f else 1f,
-        animationSpec = tween(durationMillis = if (isPressed) 90 else 170),
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = tween(durationMillis = if (isPressed) 80 else 150),
         label = "btn_scale"
     )
     val alpha by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = tween(durationMillis = if (isPressed) 90 else 170),
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = tween(durationMillis = if (isPressed) 80 else 150),
         label = "btn_alpha"
     )
 
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(CornerRadius.lg)
 
     val backgroundBrush = if (primary) {
         Brush.horizontalGradient(
             colors = listOf(
-                Color(0xB95CCFD8),
-                Color(0xC46CD8E7),
-                Color(0xBC78C8EB)
+                Color(0xFF30BDB4),
+                Color(0xFF39C5BB),
+                Color(0xFF45CFC0)
             )
         )
     } else {
         Brush.horizontalGradient(
             colors = listOf(
-                Color(0xC86FE6F0),
-                Color(0xD37CEAF8),
-                Color(0xCC8FD9FF)
+                Color(0xFFF0F7F6),
+                Color(0xFFEFF6F5)
             )
         )
     }
 
-    val strokeColor = if (primary) Color(0xD6F7FFFF) else Color(0xF2EDFFFF)
-    val textColor = if (primary) Color.White else Color(0xFF10393F)
-
-    // 高光层
-    val highlightBrush = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xCCFFFFFF),
-            Color(0x18FFFFFF)
-        )
-    )
+    val strokeColor = if (primary) Color(0x40FFFFFF) else Color(0xFFD8ECE9)
+    val textColor = if (primary) Color.White else AppColors.TextPrimary
 
     Box(
         modifier = modifier
@@ -92,55 +102,20 @@ fun LiquidGlassButton(
                 interactionSource = interactionSource,
                 indication = null
             ) { onClick() }
-            .padding(horizontal = 18.dp, vertical = 14.dp),
+            .padding(horizontal = 20.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center
     ) {
-        // 高光层（上半部分）
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(start = 3.dp, top = 2.dp, end = 3.dp, bottom = 28.dp)
-                .clip(RoundedCornerShape(26.dp))
-                .background(highlightBrush)
-        )
-        // 更亮的小高光
-        if (primary) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(start = 10.dp, top = 8.dp, end = 90.dp, bottom = 34.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0x66FFFFFF))
-            )
-        }
         Text(
             text = text,
             color = textColor,
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            letterSpacing = 0.2.sp
         )
     }
 }
 
-// ── 玻璃卡片 ──────────────────────────────────────────────────
-
-@Composable
-fun GlassCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val shape = RoundedCornerShape(20.dp)
-    Surface(
-        modifier = modifier,
-        shape = shape,
-        color = Color(0xCCF7FFFF),
-        border = BorderStroke(1.dp, Color(0x90FFFFFF))
-    ) {
-        Column(content = content)
-    }
-}
-
-// ── 时间段列表项 ──────────────────────────────────────────────
+// ── Study Slot Item ───────────────────────────────────────────
 
 @Composable
 fun StudySlotItem(
@@ -154,55 +129,72 @@ fun StudySlotItem(
         slot.enableDays.sorted().joinToString(" ") { "周${dayLabels[it - 1]}" }
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = Color(0xDDF9F4),
+        shape = RoundedCornerShape(CornerRadius.lg),
+        color = AppColors.CardSoft,
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, AppColors.LightDivider),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 10.dp)
+            .padding(bottom = CornerRadius.sm.dp)
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = slot.label.ifEmpty { "学习时间" },
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF10393F)
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppColors.TextPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "${slot.startLabel}  →  ${slot.endLabel}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF39C5BB),
-                    fontFamily = FontFamily.Monospace
+                    color = AppColors.Accent,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 0.5.sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = daysText,
-                    fontSize = 12.sp,
-                    color = Color(0xFF4E7F84)
+                    fontSize = 11.sp,
+                    color = AppColors.TextSecondary,
+                    letterSpacing = 0.3.sp
                 )
             }
             Switch(
                 checked = slot.enabled,
                 onCheckedChange = { onToggle() },
-                modifier = Modifier.padding(end = 4.dp)
+                modifier = Modifier.padding(end = 2.dp),
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = AppColors.White,
+                    checkedTrackColor = AppColors.Accent,
+                    uncheckedThumbColor = AppColors.White,
+                    uncheckedTrackColor = AppColors.TextTertiary,
+                    uncheckedBorderColor = AppColors.TextTertiary
+                )
             )
-            IconButton(onClick = onEdit) {
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier.size(36.dp)
+            ) {
                 Text(
                     text = "✏️",
-                    fontSize = 16.sp
+                    fontSize = 14.sp
                 )
             }
-            IconButton(onClick = onDelete) {
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(36.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "删除",
-                    tint = Color(0xFFFF77B7)
+                    tint = AppColors.AccentPink,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

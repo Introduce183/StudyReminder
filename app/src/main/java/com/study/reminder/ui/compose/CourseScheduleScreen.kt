@@ -51,30 +51,27 @@ fun CourseScheduleScreen(
     val weekNum = remember(semesterStartDate) { CourseScheduleRepository.getSemesterWeekNumber(context) }
     val allEnabled = courses.isNotEmpty() && courses.all { it.enabled }
 
-    // Calculate total weeks from semester start or course data
     val totalWeeks = remember(courses, semesterStartDate) {
         calculateTotalWeeks(courses, semesterStartDate)
     }
 
-    // Current display week (default to current semester week, or 1)
     var displayWeek by remember { mutableIntStateOf(if (weekNum > 0) weekNum else 1) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFEAFBF8)
+        color = AppColors.Background
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             // Title
             Text(
                 text = stringResource(R.string.course_schedule),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF10393F),
+                style = MaterialTheme.typography.headlineLarge,
+                color = AppColors.TextPrimary,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
@@ -87,19 +84,26 @@ fun CourseScheduleScreen(
                 ) {
                     Text(
                         text = if (weekNum > 0) stringResource(R.string.current_week, weekNum) else stringResource(R.string.course_imported),
-                        fontSize = 14.sp,
-                        color = Color(0xFF4E7F84)
+                        fontSize = 13.sp,
+                        color = AppColors.TextSecondary
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.week_selector),
-                            fontSize = 14.sp,
-                            color = Color(0xFF4E7F84)
+                            fontSize = 13.sp,
+                            color = AppColors.TextSecondary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Switch(
                             checked = allEnabled,
-                            onCheckedChange = { onToggleAll(it) }
+                            onCheckedChange = { onToggleAll(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AppColors.White,
+                                checkedTrackColor = AppColors.Accent,
+                                uncheckedThumbColor = AppColors.White,
+                                uncheckedTrackColor = AppColors.TextTertiary,
+                                uncheckedBorderColor = AppColors.TextTertiary
+                            )
                         )
                     }
                 }
@@ -139,13 +143,13 @@ fun CourseScheduleScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = stringResource(R.string.no_course),
-                            fontSize = 16.sp,
-                            color = Color(0xFF4E7F84)
+                            fontSize = 15.sp,
+                            color = AppColors.TextSecondary
                         )
                         Text(
                             text = stringResource(R.string.import_hint),
-                            fontSize = 13.sp,
-                            color = Color(0xFF4E7F84),
+                            fontSize = 12.sp,
+                            color = AppColors.TextTertiary,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
@@ -161,12 +165,10 @@ fun CourseScheduleScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                // Filter courses for selected week
                 val weekCourses = remember(courses, displayWeek, semesterStartDate) {
                     filterCoursesForWeek(courses, displayWeek, semesterStartDate, dateFormatTL.get()!!)
                 }
 
-                // Timetable grid
                 val weekDates = remember(displayWeek, semesterStartDate) {
                     getWeekDates(displayWeek, semesterStartDate)
                 }
@@ -182,8 +184,8 @@ fun CourseScheduleScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = stringResource(R.string.no_course_this_week),
-                        fontSize = 14.sp,
-                        color = Color(0xFF4E7F84),
+                        fontSize = 13.sp,
+                        color = AppColors.TextSecondary,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
@@ -204,11 +206,10 @@ private fun WeekSelector(
     val spacing = 6.dp
     val density = LocalDensity.current
 
-    // Center the selected week in the scrollable area
     LaunchedEffect(currentWeek) {
         val buttonWidthPx = with(density) { buttonWidth.toPx() }
         val spacingPx = with(density) { spacing.toPx() }
-        val containerWidthPx = with(density) { 300.dp.toPx() } // approximate visible width
+        val containerWidthPx = with(density) { 300.dp.toPx() }
         val targetPx = (currentWeek - 1) * (buttonWidthPx + spacingPx) - containerWidthPx / 2 + buttonWidthPx / 2
         scrollState.scrollTo(targetPx.toInt().coerceAtLeast(0))
     }
@@ -224,9 +225,9 @@ private fun WeekSelector(
             Box(
                 modifier = Modifier
                     .size(width = buttonWidth, height = 36.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(CornerRadius.sm))
                     .background(
-                        if (isSelected) Color(0xFF39C5BB) else Color(0x15000000)
+                        if (isSelected) AppColors.Accent else AppColors.WeekSelectedBg
                     )
                     .clickable { onSelectWeek(week) },
                 contentAlignment = Alignment.Center
@@ -234,8 +235,8 @@ private fun WeekSelector(
                 Text(
                     text = "$week",
                     fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else Color(0xFF4E7F84)
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (isSelected) Color.White else AppColors.TextSecondary
                 )
             }
         }
@@ -257,8 +258,8 @@ private fun TimetableGrid(
         ) {
             Text(
                 text = "本周无课程",
-                fontSize = 14.sp,
-                color = Color(0xFF4E7F84)
+                fontSize = 13.sp,
+                color = AppColors.TextSecondary
             )
         }
         return
@@ -272,11 +273,10 @@ private fun TimetableGrid(
     val maxHour = (courses.maxOf { it.endHour } + 1).coerceAtLeast(22)
     val hours = (minHour until maxHour).toList()
 
-    // Day headers
     val dayHeaders = listOf("", "一", "二", "三", "四", "五", "六", "日")
 
     Column(modifier = modifier) {
-        // Header row — day name + date
+        // Header row
         Row {
             Box(modifier = Modifier.width(labelWidth))
             for (day in 1..7) {
@@ -287,14 +287,14 @@ private fun TimetableGrid(
                     Text(
                         text = dayHeaders[day],
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10393F)
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.TextPrimary
                     )
                     if (day <= weekDates.size) {
                         Text(
                             text = weekDates[day - 1],
                             fontSize = 9.sp,
-                            color = Color(0xFF4E7F84)
+                            color = AppColors.TextTertiary
                         )
                     }
                 }
@@ -317,7 +317,7 @@ private fun TimetableGrid(
                         Text(
                             text = String.format("%02d:00", hour),
                             fontSize = 10.sp,
-                            color = Color(0xFF4E7F84),
+                            color = AppColors.TextTertiary,
                             modifier = Modifier.padding(end = 4.dp)
                         )
                     }
@@ -335,7 +335,7 @@ private fun TimetableGrid(
                     for (hour in hours) {
                         val offsetY = ((hour - minHour) * hourHeight.value).dp
                         HorizontalDivider(
-                            color = Color(0x15000000),
+                            color = AppColors.LightDivider,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .offset(y = offsetY)
@@ -350,7 +350,7 @@ private fun TimetableGrid(
 
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = color.copy(alpha = 0.2f),
+                            color = color.copy(alpha = 0.15f),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 1.dp)
@@ -364,7 +364,7 @@ private fun TimetableGrid(
                                 Text(
                                     text = course.courseName,
                                     fontSize = 8.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = color,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
@@ -413,7 +413,6 @@ private fun getWeekDates(weekNum: Int, semesterStart: String): List<String> {
 private fun calculateTotalWeeks(courses: List<CourseSchedule>, semesterStart: String): Int {
     val dateFormat = dateFormatTL.get()!!
 
-    // Find the latest end date across all courses
     var maxDate = ""
     for (course in courses) {
         for (range in course.weekRanges) {
@@ -421,11 +420,10 @@ private fun calculateTotalWeeks(courses: List<CourseSchedule>, semesterStart: St
         }
     }
 
-    if (maxDate.isEmpty() || semesterStart.isEmpty()) return 16 // default
+    if (maxDate.isEmpty() || semesterStart.isEmpty()) return 16
 
     return try {
         val start = dateFormat.parse(semesterStart)!!
-        // Adjust to Monday
         val startCal = Calendar.getInstance().apply {
             time = start
             while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) add(Calendar.DAY_OF_YEAR, -1)
@@ -445,7 +443,6 @@ private fun filterCoursesForWeek(
 ): List<CourseSchedule> {
     if (semesterStart.isEmpty()) return courses
 
-    // Calculate Monday of the target week
     val weekMonday = try {
         val start = dateFormat.parse(semesterStart)!!
         val cal = Calendar.getInstance().apply {
@@ -456,7 +453,6 @@ private fun filterCoursesForWeek(
         dateFormat.format(cal.time)
     } catch (_: Exception) { return courses }
 
-    // Calculate Sunday of the target week
     val weekSunday = try {
         val cal = Calendar.getInstance().apply {
             time = dateFormat.parse(weekMonday)!!
@@ -466,8 +462,7 @@ private fun filterCoursesForWeek(
     } catch (_: Exception) { return courses }
 
     return courses.filter { course ->
-        if (course.weekRanges.isEmpty()) return@filter true // no limit = always active
-        // Check if any week range overlaps with the target week
+        if (course.weekRanges.isEmpty()) return@filter true
         course.weekRanges.any { range ->
             range[0] <= weekSunday && range[1] >= weekMonday
         }
