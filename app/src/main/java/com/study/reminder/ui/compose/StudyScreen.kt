@@ -343,8 +343,8 @@ private fun ComparisonCard(current: Int, previous: Int, modifier: Modifier = Mod
     Surface(
         shape = RoundedCornerShape(CornerRadius.md),
         color = AppColors.CardBgSoft,
-        shadowElevation = 1.dp,
-        border = BorderStroke(1.dp, Color(0x0C000000)),
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, AppColors.LightDivider),
         modifier = modifier
     ) {
         Column(
@@ -377,8 +377,8 @@ private fun StatCard(
     Surface(
         shape = RoundedCornerShape(CornerRadius.md),
         color = AppColors.CardBgSoft,
-        shadowElevation = 1.dp,
-        border = BorderStroke(1.dp, Color(0x0C000000)),
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, AppColors.LightDivider),
         modifier = modifier
     ) {
         Column(
@@ -407,8 +407,8 @@ private fun TabButton(text: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         shape = shape,
         color = if (selected) AppColors.Accent else AppColors.CardBgSoft,
-        shadowElevation = if (selected) 2.dp else 0.dp,
-        border = if (selected) null else BorderStroke(1.dp, Color(0x0C000000)),
+        shadowElevation = 0.dp,
+        border = if (selected) null else BorderStroke(1.dp, AppColors.LightDivider),
         onClick = onClick
     ) {
         Text(

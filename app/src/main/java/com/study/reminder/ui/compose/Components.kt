@@ -16,16 +16,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.model.StudySlot
+
+// ── Easing Curves (Emil Kowalski style) ───────────────────────
+
+private val EaseOut = androidx.compose.animation.core.CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
 
 // ── Glass Card ────────────────────────────────────────────────
 
@@ -39,8 +43,8 @@ fun GlassCard(
         modifier = modifier,
         shape = shape,
         color = AppColors.CardBg,
-        shadowElevation = 4.dp,
-        border = BorderStroke(1.dp, Color(0x15000000))
+        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, AppColors.GlassStroke)
     ) {
         Column(content = content)
     }
@@ -60,12 +64,18 @@ fun LiquidGlassButton(
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.97f else 1f,
-        animationSpec = tween(durationMillis = if (isPressed) 80 else 150),
+        animationSpec = tween(
+            durationMillis = if (isPressed) 100 else 160,
+            easing = EaseOut
+        ),
         label = "btn_scale"
     )
     val alpha by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
-        animationSpec = tween(durationMillis = if (isPressed) 80 else 150),
+        targetValue = if (isPressed) 0.9f else 1f,
+        animationSpec = tween(
+            durationMillis = if (isPressed) 100 else 160,
+            easing = EaseOut
+        ),
         label = "btn_alpha"
     )
 
@@ -74,27 +84,30 @@ fun LiquidGlassButton(
     val backgroundBrush = if (primary) {
         Brush.horizontalGradient(
             colors = listOf(
-                Color(0xFF28B5AB),
+                Color(0xFF2DB5AB),
                 Color(0xFF39C5BB),
-                Color(0xFF4CD4C8)
+                Color(0xFF45CFC5)
             )
         )
     } else {
         Brush.horizontalGradient(
             colors = listOf(
-                Color(0xFFE8F4F2),
-                Color(0xFFEFF6F5)
+                AppColors.InputBg,
+                AppColors.InputBg.copy(alpha = 0.95f)
             )
         )
     }
 
-    val strokeColor = if (primary) Color(0x40FFFFFF) else Color(0xFFD8ECE9)
+    val strokeColor = if (primary) Color(0x30FFFFFF) else AppColors.GlassStroke
     val textColor = if (primary) Color.White else AppColors.TextPrimary
 
     Box(
         modifier = modifier
-            .scale(scale)
-            .alpha(alpha)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                this.alpha = alpha
+            }
             .clip(shape)
             .background(backgroundBrush)
             .border(BorderStroke(1.dp, strokeColor), shape)
@@ -102,7 +115,7 @@ fun LiquidGlassButton(
                 interactionSource = interactionSource,
                 indication = null
             ) { onClick() }
-            .padding(horizontal = 20.dp, vertical = 13.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -131,11 +144,11 @@ fun StudySlotItem(
     Surface(
         shape = RoundedCornerShape(CornerRadius.lg),
         color = AppColors.CardSoft,
-        shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, Color(0x10000000)),
+        shadowElevation = 1.dp,
+        border = BorderStroke(1.dp, AppColors.LightDivider),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = CornerRadius.sm.dp)
+            .padding(bottom = 6.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
