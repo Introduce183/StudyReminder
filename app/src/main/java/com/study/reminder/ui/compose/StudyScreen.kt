@@ -1,5 +1,6 @@
 package com.study.reminder.ui.compose
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -340,8 +341,10 @@ private fun ComparisonCard(current: Int, previous: Int, modifier: Modifier = Mod
     val color = if (diff > 0) AppColors.Accent else if (diff < 0) AppColors.AccentPink else AppColors.TextSecondary
 
     Surface(
-        shape = RoundedCornerShape(CornerRadius.lg),
+        shape = RoundedCornerShape(CornerRadius.md),
         color = AppColors.CardBgSoft,
+        shadowElevation = 1.dp,
+        border = BorderStroke(1.dp, Color(0x0C000000)),
         modifier = modifier
     ) {
         Column(
@@ -372,8 +375,10 @@ private fun StatCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(CornerRadius.lg),
+        shape = RoundedCornerShape(CornerRadius.md),
         color = AppColors.CardBgSoft,
+        shadowElevation = 1.dp,
+        border = BorderStroke(1.dp, Color(0x0C000000)),
         modifier = modifier
     ) {
         Column(
@@ -398,10 +403,12 @@ private fun StatCard(
 
 @Composable
 private fun TabButton(text: String, selected: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(CornerRadius.md)
+    val shape = RoundedCornerShape(CornerRadius.sm)
     Surface(
         shape = shape,
         color = if (selected) AppColors.Accent else AppColors.CardBgSoft,
+        shadowElevation = if (selected) 2.dp else 0.dp,
+        border = if (selected) null else BorderStroke(1.dp, Color(0x0C000000)),
         onClick = onClick
     ) {
         Text(

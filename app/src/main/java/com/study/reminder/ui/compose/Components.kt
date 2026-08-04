@@ -39,8 +39,8 @@ fun GlassCard(
         modifier = modifier,
         shape = shape,
         color = AppColors.CardBg,
-        shadowElevation = 1.dp,
-        border = BorderStroke(1.dp, AppColors.GlassStroke)
+        shadowElevation = 4.dp,
+        border = BorderStroke(1.dp, Color(0x15000000))
     ) {
         Column(content = content)
     }
@@ -74,15 +74,15 @@ fun LiquidGlassButton(
     val backgroundBrush = if (primary) {
         Brush.horizontalGradient(
             colors = listOf(
-                Color(0xFF30BDB4),
+                Color(0xFF28B5AB),
                 Color(0xFF39C5BB),
-                Color(0xFF45CFC0)
+                Color(0xFF4CD4C8)
             )
         )
     } else {
         Brush.horizontalGradient(
             colors = listOf(
-                Color(0xFFF0F7F6),
+                Color(0xFFE8F4F2),
                 Color(0xFFEFF6F5)
             )
         )
@@ -131,8 +131,8 @@ fun StudySlotItem(
     Surface(
         shape = RoundedCornerShape(CornerRadius.lg),
         color = AppColors.CardSoft,
-        shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, AppColors.LightDivider),
+        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, Color(0x10000000)),
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = CornerRadius.sm.dp)

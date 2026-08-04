@@ -202,10 +202,10 @@ object Spacing {
 // ── Corner Radius ─────────────────────────────────────────────
 
 object CornerRadius {
-    val sm = 8
-    val md = 12
-    val lg = 16
-    val xl = 20
+    val sm = 6
+    val md = 10
+    val lg = 12
+    val xl = 16
     val pill = 50
 }
 
