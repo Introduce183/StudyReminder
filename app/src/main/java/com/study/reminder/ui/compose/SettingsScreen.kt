@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.R
@@ -49,14 +49,22 @@ fun SettingsScreen(
                     text = stringResource(R.string.settings_title),
                     style = MaterialTheme.typography.headlineLarge,
                     color = AppColors.TextPrimary,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text = "提醒方式与学习监督",
+                    fontSize = 12.sp,
+                    color = AppColors.TextTertiary,
+                    letterSpacing = 0.4.sp,
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
             }
 
-            // Study slots section
+            // ── 学习时间段 ──
             item {
-                GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
-                    Column(modifier = Modifier.padding(18.dp)) {
+                SectionLabel(text = "学习时间段")
+                GlassCard(modifier = Modifier.padding(bottom = 18.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -74,93 +82,115 @@ fun SettingsScreen(
                         }
 
                         if (slots.isEmpty()) {
+                            EmptyState(
+                                emoji = "🗓️",
+                                title = stringResource(R.string.no_slot_hint).substringBefore("\n"),
+                                hint = "点「添加」设置，如 10:00 → 11:30"
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            slots.forEach { slot ->
+                                StudySlotItem(
+                                    slot = slot,
+                                    onToggle = { onToggleSlot(slot) },
+                                    onEdit = { onEditSlot(slot) },
+                                    onDelete = { onDeleteSlot(slot) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 提醒方式 ──
+            item {
+                SectionLabel(text = stringResource(R.string.remind_method))
+                GlassCard(modifier = Modifier.padding(bottom = 18.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        OptionSwitch(stringResource(R.string.notification_remind), notificationEnabled, onNotificationChange)
+                        OptionSwitch(stringResource(R.string.island_remind), islandEnabled, onIslandChange)
+                        OptionSwitch(stringResource(R.string.fullscreen_remind), fullScreenEnabled, onFullScreenChange)
+                        OptionSwitch(stringResource(R.string.force_home_remind), forceHomeEnabled, onForceHomeChange)
+
+                        Surface(
+                            shape = RoundedCornerShape(CornerRadius.md),
+                            color = AppColors.InfoBg,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 6.dp)
+                        ) {
                             Text(
-                                text = stringResource(R.string.no_slot_hint),
-                                color = AppColors.TextSecondary,
-                                fontSize = 13.sp,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                                textAlign = TextAlign.Center
+                                text = stringResource(R.string.slot_info_hint),
+                                fontSize = 12.sp,
+                                color = AppColors.InfoText,
+                                modifier = Modifier.padding(12.dp),
+                                lineHeight = 18.sp
                             )
                         }
                     }
                 }
             }
 
-            items(slots, key = { it.id }) { slot ->
-                StudySlotItem(
-                    slot = slot,
-                    onToggle = { onToggleSlot(slot) },
-                    onEdit = { onEditSlot(slot) },
-                    onDelete = { onDeleteSlot(slot) }
-                )
-            }
-
-            // Reminder methods section
+            // ── 其他设置 ──
             item {
-                GlassCard(modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Text(
-                            text = stringResource(R.string.remind_method),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = AppColors.TextPrimary,
-                            modifier = Modifier.padding(bottom = 14.dp)
+                SectionLabel(text = "其他")
+                GlassCard {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        // 主题切换
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (isDarkTheme) "🌙" else "☀️",
+                                    fontSize = 15.sp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isDarkTheme) "深色模式" else "浅色模式",
+                                    color = AppColors.TextPrimary,
+                                    fontSize = 14.sp
+                                )
+                            }
+                            Switch(
+                                checked = isDarkTheme,
+                                onCheckedChange = onThemeChange,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = AppColors.White,
+                                    checkedTrackColor = AppColors.Accent,
+                                    uncheckedThumbColor = AppColors.White,
+                                    uncheckedTrackColor = AppColors.TextTertiary,
+                                    uncheckedBorderColor = AppColors.TextTertiary
+                                )
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = AppColors.LightDivider,
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
-                        OptionSwitch(stringResource(R.string.notification_remind), notificationEnabled, onNotificationChange)
-                        OptionSwitch(stringResource(R.string.island_remind), islandEnabled, onIslandChange)
-                        OptionSwitch(stringResource(R.string.fullscreen_remind), fullScreenEnabled, onFullScreenChange)
-                        OptionSwitch(stringResource(R.string.force_home_remind), forceHomeEnabled, onForceHomeChange)
-                    }
-                }
-            }
 
-            // Info hint
-            item {
-                Surface(
-                    shape = RoundedCornerShape(CornerRadius.xl),
-                    color = AppColors.InfoBg,
-                    modifier = Modifier.padding(bottom = 14.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.slot_info_hint),
-                        fontSize = 12.sp,
-                        color = AppColors.InfoText,
-                        modifier = Modifier.padding(14.dp),
-                        lineHeight = 18.sp
-                    )
-                }
-            }
-
-            // Action buttons
-            item {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    LiquidGlassButton(
-                        text = stringResource(R.string.whitelist),
-                        onClick = onWhitelist,
-                        primary = false,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
-                    )
-                    LiquidGlassButton(
-                        text = stringResource(R.string.accessibility_optional),
-                        onClick = onAccessibilityGuide,
-                        primary = false,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // Theme switch
-            item {
-                GlassCard(modifier = Modifier.padding(top = 14.dp)) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        OptionSwitch(
-                            label = if (isDarkTheme) "深色模式" else "浅色模式",
-                            checked = isDarkTheme,
-                            onCheckedChange = onThemeChange
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            LiquidGlassButton(
+                                text = stringResource(R.string.whitelist),
+                                onClick = onWhitelist,
+                                primary = false,
+                                modifier = Modifier.weight(1f)
+                            )
+                            LiquidGlassButton(
+                                text = stringResource(R.string.accessibility_optional),
+                                onClick = onAccessibilityGuide,
+                                primary = false,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))

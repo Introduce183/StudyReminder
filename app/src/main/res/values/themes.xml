@@ -3,7 +3,7 @@
     <style name="Theme.StudyReminder" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorPrimaryVariant">@color/accent_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
         <item name="colorSecondary">@color/accent_pink</item>
         <item name="colorTertiary">@color/accent_blue</item>
         <item name="colorSurface">@color/card_bg</item>
@@ -19,7 +19,7 @@
     <style name="Theme.StudyReminder.Light" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorPrimaryVariant">@color/accent_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
         <item name="colorSecondary">@color/accent_pink</item>
         <item name="colorTertiary">@color/accent_blue</item>
         <item name="colorSurface">@color/card_bg</item>
@@ -32,19 +32,20 @@
         <item name="android:windowBackground">@color/bg_main</item>
     </style>
 
-    <style name="Theme.Translucent" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.Translucent" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
     <style name="Widget.StudyReminder.Button.Primary" parent="Widget.Material3.Button">
-        <item name="android:background">@drawable/bg_primary_button</item>
-        <item name="android:textColor">@color/white</item>
+        <item name="android:background">@drawable/bg_accent_button</item>
+        <item name="android:textColor">@color/on_accent</item>
         <item name="android:minHeight">50dp</item>
-        <item name="android:paddingLeft">18dp</item>
-        <item name="android:paddingRight">18dp</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingRight">20dp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">14sp</item>
         <item name="android:letterSpacing">0.02</item>
@@ -53,11 +54,11 @@
     </style>
 
     <style name="Widget.StudyReminder.Button.Secondary" parent="Widget.Material3.Button">
-        <item name="android:background">@drawable/bg_secondary_button</item>
-        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:background">@drawable/bg_outline_button</item>
+        <item name="android:textColor">@color/accent</item>
         <item name="android:minHeight">50dp</item>
-        <item name="android:paddingLeft">18dp</item>
-        <item name="android:paddingRight">18dp</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingRight">20dp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">14sp</item>
         <item name="android:letterSpacing">0.02</item>

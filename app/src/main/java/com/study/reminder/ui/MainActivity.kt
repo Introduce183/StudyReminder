@@ -5,12 +5,15 @@ import android.app.AlarmManager
 import android.app.AlertDialog
 import android.content.ComponentName
 import android.content.Intent
+import android.graphics.Color as AndroidColor
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.provider.Settings.Secure
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -25,12 +28,9 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import com.study.reminder.ui.compose.AppColors
-import com.study.reminder.ui.compose.CornerRadius
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.study.reminder.R
 import com.study.reminder.helper.CourseScheduler
@@ -129,11 +129,15 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     bottomBar = {
-                        NavigationBar(
-                            containerColor = AppColors.NavBar,
-                            tonalElevation = 0.dp,
-                            modifier = Modifier
-                        ) {
+                        Column {
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = AppColors.LightDivider
+                            )
+                            NavigationBar(
+                                containerColor = AppColors.NavBar,
+                                tonalElevation = 0.dp
+                            ) {
                             val navColors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = AppColors.Accent,
                                 selectedTextColor = AppColors.Accent,
@@ -162,6 +166,7 @@ class MainActivity : ComponentActivity() {
                                 label = { Text("设置") },
                                 colors = navColors
                             )
+                            }
                         }
                     }
                 ) { paddingValues ->
@@ -550,12 +555,40 @@ class MainActivity : ComponentActivity() {
         activeGuideDialog?.dismiss()
         val dialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_permission_guide, null)
-        view.findViewById<TextView>(R.id.tv_sheet_title).text = title
-        view.findViewById<TextView>(R.id.tv_sheet_message).text = message
+
+        // 弹窗颜色跟随应用内主题，而不是系统主题
+        val isDark = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getBoolean("opt_dark_theme", true)
+        val sheetBg = if (isDark) 0xFF151E21.toInt() else 0xFFFFFFFF.toInt()
+        val titleColor = if (isDark) 0xFFEAF3F2.toInt() else 0xFF0D2F33.toInt()
+        val bodyColor = if (isDark) 0xFF9DB5B2.toInt() else 0xFF4A7A80.toInt()
+        val accentColor = 0xFF39C5BB.toInt()
+        val onAccentColor = 0xFF06272B.toInt()
+        val radius = 24f * resources.displayMetrics.density
+
+        view.background = GradientDrawable().apply {
+            cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+            setColor(sheetBg)
+        }
+
+        view.findViewById<TextView>(R.id.tv_sheet_title).apply {
+            text = title
+            setTextColor(titleColor)
+        }
+        view.findViewById<TextView>(R.id.tv_sheet_message).apply {
+            text = message
+            setTextColor(bodyColor)
+        }
         val primaryButton = view.findViewById<Button>(R.id.btn_sheet_primary)
         val secondaryButton = view.findViewById<Button>(R.id.btn_sheet_secondary)
-        primaryButton.text = primaryText
-        secondaryButton.text = secondaryText
+        primaryButton.apply {
+            text = primaryText
+            setTextColor(onAccentColor)
+        }
+        secondaryButton.apply {
+            text = secondaryText
+            setTextColor(accentColor)
+        }
         primaryButton.setOnClickListener {
             dialog.dismiss()
             onPrimary()
@@ -564,6 +597,10 @@ class MainActivity : ComponentActivity() {
             dialog.dismiss()
         }
         dialog.setContentView(view)
+        dialog.setOnShowListener {
+            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                ?.setBackgroundColor(AndroidColor.TRANSPARENT)
+        }
         dialog.setOnDismissListener {
             activeGuideDialog = null
             onDismiss?.invoke()

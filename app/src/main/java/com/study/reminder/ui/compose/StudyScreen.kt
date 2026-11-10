@@ -1,6 +1,12 @@
 package com.study.reminder.ui.compose
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -13,20 +19,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import com.study.reminder.R
 import com.study.reminder.helper.SlotScheduler
-import com.study.reminder.model.DayStats
 import com.study.reminder.model.SlotRepository
 import com.study.reminder.model.StudyStatsRepository
 import com.study.reminder.service.TimerService
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun StudyScreen(
@@ -41,6 +53,7 @@ fun StudyScreen(
     var isInSlot by remember { mutableStateOf(StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0) }
     var elapsedSeconds by remember { mutableStateOf(0) }
     var statsRefreshToken by remember { mutableIntStateOf(0) }
+    var slotRemainingMinutes by remember { mutableIntStateOf(0) }
 
     val weekStats = remember(weekOffset, statsRefreshToken) { StudyStatsRepository.getWeekStats(context, weekOffset) }
     val prevWeekStats = remember(weekOffset, statsRefreshToken) { StudyStatsRepository.getWeekStats(context, weekOffset - 1) }
@@ -58,10 +71,10 @@ fun StudyScreen(
                 isStudying = StudyStatsRepository.hasActiveSession(context)
                 if (!isStudying) break
                 elapsedSeconds = ((System.currentTimeMillis() - startMs) / 1000).toInt().coerceAtLeast(0)
-                // 每分钟更新一次统计数据
                 updateCounter++
                 if (updateCounter % 60 == 0) {
                     statsRefreshToken++
+                    slotRemainingMinutes = StudyStatsRepository.getActiveSlotRemainingMinutes(context)
                 }
                 delay(1000L)
             }
@@ -73,13 +86,13 @@ fun StudyScreen(
     fun refresh() {
         isStudying = StudyStatsRepository.hasActiveSession(context)
         isInSlot = StudyStatsRepository.getActiveSlotRemainingMinutes(context) > 0
+        slotRemainingMinutes = StudyStatsRepository.getActiveSlotRemainingMinutes(context)
         statsRefreshToken++
     }
 
     fun startManualSession() {
         val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(context)
         val duration = if (remaining > 0) remaining else 24 * 60
-        // 获取当前活跃的时间段 ID，如果在时间段内则记录，否则为 -1L
         val activeSlotId = if (remaining > 0) StudyStatsRepository.getActiveSlotId(context) else -1L
         StudyStatsRepository.startSession(context, activeSlotId)
         val serviceIntent = android.content.Intent(context, TimerService::class.java).apply {
@@ -97,14 +110,12 @@ fun StudyScreen(
         }
         context.startService(serviceIntent)
 
-        // 结束学习时，自动禁用所有活跃的时间段
         val activeSlotIds = StudyStatsRepository.getActiveSlotIds(context)
         if (activeSlotIds.isNotEmpty()) {
             for (id in activeSlotIds) {
                 SlotRepository.disableSlot(context, id)
             }
             SlotScheduler.rescheduleAll(context)
-            // 通知外部刷新时间段列表
             onSlotDisabled()
         }
 
@@ -130,15 +141,22 @@ fun StudyScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            // Title
+            // 标题区
             Text(
                 text = stringResource(R.string.study_statistics),
                 style = MaterialTheme.typography.headlineLarge,
                 color = AppColors.TextPrimary,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            Text(
+                text = remember { SimpleDateFormat("M月d日 EEEE", Locale.CHINA).format(Date()) },
+                fontSize = 12.sp,
+                color = AppColors.TextTertiary,
+                letterSpacing = 0.4.sp,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
-            // Study status card
+            // 学习状态卡片（呼吸光环计时器）
             GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
                 Column(
                     modifier = Modifier
@@ -150,21 +168,53 @@ fun StudyScreen(
                         val h = elapsedSeconds / 3600
                         val m = (elapsedSeconds % 3600) / 60
                         val s = elapsedSeconds % 60
-                        Text(
-                            text = stringResource(R.string.studying),
-                            fontSize = 13.sp,
-                            color = AppColors.Accent,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.5.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = String.format("%02d:%02d:%02d", h, m, s),
-                            fontSize = 38.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.TextPrimary,
-                            letterSpacing = 1.sp
-                        )
+
+                        // 光环进度：在时间段内显示真实进度，否则呼吸提示
+                        val progress = if (slotRemainingMinutes > 0) {
+                            val total = elapsedSeconds + slotRemainingMinutes * 60
+                            (elapsedSeconds.toFloat() / total).coerceIn(0.02f, 1f)
+                        } else 1f
+
+                        Box(
+                            modifier = Modifier.size(196.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            StudyRing(progress = progress, breathing = slotRemainingMinutes <= 0)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(7.dp)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(AppColors.Accent)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = stringResource(R.string.studying).replace("🟢 ", ""),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AppColors.Accent,
+                                        letterSpacing = 0.8.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = String.format("%02d:%02d:%02d", h, m, s),
+                                    fontSize = 34.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.TextPrimary,
+                                    letterSpacing = 1.sp
+                                )
+                                if (slotRemainingMinutes > 0) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "剩余 ${slotRemainingMinutes} 分钟",
+                                        fontSize = 11.sp,
+                                        color = AppColors.TextTertiary
+                                    )
+                                }
+                            }
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         LiquidGlassButton(
                             text = stringResource(R.string.end_study),
@@ -172,6 +222,12 @@ fun StudyScreen(
                             onClick = { endStudySession() }
                         )
                     } else {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (isInSlot) "🟢" else "💤",
+                            fontSize = 34.sp
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = stringResource(if (isInSlot) R.string.in_study_slot else R.string.not_in_study_slot),
                             fontSize = 13.sp,
@@ -186,44 +242,39 @@ fun StudyScreen(
                 }
             }
 
-            // Today overview
-            GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Text(
-                        text = stringResource(R.string.today_overview),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = AppColors.TextPrimary,
-                        modifier = Modifier.padding(bottom = 14.dp)
+            // 今日概览
+            SectionLabel(text = stringResource(R.string.today_overview))
+            GlassCard(modifier = Modifier.padding(bottom = 18.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    StatCard(
+                        label = stringResource(R.string.study_duration),
+                        value = formatMinutes(todayStats.totalMinutes),
+                        color = AppColors.Accent,
+                        modifier = Modifier.weight(1f)
                     )
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        StatCard(
-                            label = stringResource(R.string.study_duration),
-                            value = formatMinutes(todayStats.totalMinutes),
-                            color = AppColors.Accent,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        StatCard(
-                            label = stringResource(R.string.distraction_count),
-                            value = "${todayStats.distractionCount}",
-                            color = AppColors.AccentPink,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    StatCard(
+                        label = stringResource(R.string.distraction_count),
+                        value = "${todayStats.distractionCount}",
+                        color = AppColors.AccentPink,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
-            // Week/Month switch
+            // 周/月统计
+            SectionLabel(text = "学习趋势")
             GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        TabButton(stringResource(R.string.this_week), selectedTab == 0) { selectedTab = 0 }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TabButton(stringResource(R.string.this_month), selectedTab == 1) { selectedTab = 1 }
-                    }
+                    SegmentedTabs(
+                        options = listOf(stringResource(R.string.this_week), stringResource(R.string.this_month)),
+                        selectedIndex = selectedTab,
+                        onSelect = { selectedTab = it }
+                    )
 
                     Spacer(modifier = Modifier.height(18.dp))
 
@@ -291,6 +342,103 @@ fun StudyScreen(
                             maxValue = (monthStats.maxOfOrNull { it.totalMinutes } ?: 60).coerceAtLeast(30)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+// ── 呼吸光环 ─────────────────────────────────────────────────
+
+@Composable
+private fun StudyRing(progress: Float, breathing: Boolean) {
+    val infinite = rememberInfiniteTransition(label = "ring_breath")
+    val breathAlpha by infinite.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ring_alpha"
+    )
+
+    val trackColor = AppColors.LightDivider
+    val accentColor = AppColors.Accent
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val stroke = 10.dp.toPx()
+        val inset = stroke / 2 + 2.dp.toPx()
+        val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
+        val topLeft = Offset(inset, inset)
+
+        // 轨道
+        drawArc(
+            color = trackColor,
+            startAngle = -90f,
+            sweepAngle = 360f,
+            useCenter = false,
+            topLeft = topLeft,
+            size = arcSize,
+            style = Stroke(width = stroke, cap = StrokeCap.Round)
+        )
+        // 进度
+        drawArc(
+            color = accentColor.copy(alpha = if (breathing) breathAlpha else 1f),
+            startAngle = -90f,
+            sweepAngle = 360f * progress.coerceIn(0f, 1f),
+            useCenter = false,
+            topLeft = topLeft,
+            size = arcSize,
+            style = Stroke(width = stroke, cap = StrokeCap.Round)
+        )
+        // 端点光晕
+        if (progress > 0.02f) {
+            val angle = Math.toRadians((-90f + 360f * progress).toDouble())
+            val radius = arcSize.width / 2
+            val cx = topLeft.x + radius + radius * Math.cos(angle).toFloat()
+            val cy = topLeft.y + radius + radius * Math.sin(angle).toFloat()
+            drawCircle(
+                color = accentColor.copy(alpha = 0.25f),
+                radius = stroke * 1.4f,
+                center = Offset(cx, cy)
+            )
+        }
+    }
+}
+
+// ── 分段式标签 ───────────────────────────────────────────────
+
+@Composable
+private fun SegmentedTabs(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(CornerRadius.md),
+        color = AppColors.CardBgSoft,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.padding(3.dp)) {
+            options.forEachIndexed { index, label ->
+                val selected = index == selectedIndex
+                Surface(
+                    shape = RoundedCornerShape(CornerRadius.sm),
+                    color = if (selected) AppColors.Accent else Color.Transparent,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onSelect(index) }
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 13.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (selected) OnAccent else AppColors.TextSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
                 }
             }
         }
@@ -428,33 +576,13 @@ private fun StatCard(
 }
 
 @Composable
-private fun TabButton(text: String, selected: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(CornerRadius.sm)
-    Surface(
-        shape = shape,
-        color = if (selected) AppColors.Accent else AppColors.CardBgSoft,
-        shadowElevation = 0.dp,
-        border = if (selected) null else BorderStroke(1.dp, AppColors.LightDivider),
-        onClick = onClick
-    ) {
-        Text(
-            text = text,
-            fontSize = 13.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) AppColors.White else AppColors.TextSecondary,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-        )
-    }
-}
-
-@Composable
 private fun BarChart(
     data: List<Int>,
     labels: List<String>,
     maxValue: Int
 ) {
     val barColor = AppColors.Accent
-    val barBg = Color(0x1839C5BB)
+    val barBg = AppColors.Accent.copy(alpha = 0.09f)
     val barHeight = 100.dp
     val labelHeight = 18.dp
 
@@ -526,7 +654,7 @@ private fun ScrollableBarChart(
     maxValue: Int
 ) {
     val barColor = AppColors.Accent
-    val barBg = Color(0x1839C5BB)
+    val barBg = AppColors.Accent.copy(alpha = 0.09f)
     val barWidth = 24.dp
     val barHeight = 100.dp
     val valueLabelHeight = 18.dp

@@ -1,196 +1,33 @@
 package com.study.reminder.ui.compose
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// ── Color Palette ─────────────────────────────────────────────
+// ── Brand Palette（主色调保持不变）────────────────────────────
 
 private val Accent = Color(0xFF39C5BB)
 private val AccentDark = Color(0xFF2AA89F)
 private val AccentPink = Color(0xFFFF77B7)
 private val AccentBlue = Color(0xFF5FD7FF)
 
-// ── Design Tokens ─────────────────────────────────────────────
+/** 主色上的文字/图标颜色：深青比白色对比度更高，更精致 */
+val OnAccent = Color(0xFF06272B)
 
-@Immutable
-data class AppColorScheme(
-    val background: Color,
-    val surface: Color,
-    val surfaceVariant: Color,
-    val card: Color,
-    val cardSoft: Color,
-    val textPrimary: Color,
-    val textSecondary: Color,
-    val textTertiary: Color,
-    val accent: Color,
-    val accentDark: Color,
-    val accentPink: Color,
-    val accentBlue: Color,
-    val divider: Color,
-    val glassStroke: Color,
-    val glassFill: Color,
-    val navBar: Color,
-    val infoBg: Color,
-    val infoText: Color,
-    val white: Color,
-    val inputBg: Color,
-    val success: Color,
-    val error: Color
-)
+// ── Color Schemes ────────────────────────────────────────────
 
-val LightColors = AppColorScheme(
-    background = Color(0xFF0A0A0A),
-    surface = Color(0xFF141414),
-    surfaceVariant = Color(0xFF1A1A1A),
-    card = Color(0xFF1E1E1E),
-    cardSoft = Color(0xFF181818),
-    textPrimary = Color(0xFFF0F0F0),
-    textSecondary = Color(0xFFA0A0A0),
-    textTertiary = Color(0xFF6B6B6B),
-    accent = Accent,
-    accentDark = AccentDark,
-    accentPink = AccentPink,
-    accentBlue = AccentBlue,
-    divider = Color(0x12FFFFFF),
-    glassStroke = Color(0x18FFFFFF),
-    glassFill = Color(0xEE1A1A1A),
-    navBar = Color(0xF0141414),
-    infoBg = Color(0xFF1A2925),
-    infoText = Color(0xFF7ECEB8),
-    white = Color.White,
-    inputBg = Color(0xFF1A1A1A),
-    success = Color(0xFF30D158),
-    error = Color(0xFFFF6961)
-)
-
-val DarkColors = AppColorScheme(
-    background = Color(0xFF0A1A1F),
-    surface = Color(0xFF13252B),
-    surfaceVariant = Color(0xFF1A2E35),
-    card = Color(0xFF1E343C),
-    cardSoft = Color(0xFF162A31),
-    textPrimary = Color(0xFFE8F4F2),
-    textSecondary = Color(0xFF9AB8B4),
-    textTertiary = Color(0xFF6A8E8A),
-    accent = Accent,
-    accentDark = AccentDark,
-    accentPink = AccentPink,
-    accentBlue = AccentBlue,
-    divider = Color(0x15FFFFFF),
-    glassStroke = Color(0x20FFFFFF),
-    glassFill = Color(0xCC1A2E35),
-    navBar = Color(0xE613252B),
-    infoBg = Color(0xFF1A3029),
-    infoText = Color(0xFF7ECEB8),
-    white = Color.White,
-    inputBg = Color(0xFF1A2E35),
-    success = Color(0xFF30D158),
-    error = Color(0xFFFF6961)
-)
-
-// ── CompositionLocal for AppColors ───────────────────────────
-
-val LocalAppColors = staticCompositionLocalOf<Any> { DarkAppColorScheme }
-
-// Dark theme color scheme
-object DarkAppColorScheme : DynamicColors {
-    override val Background = Color(0xFF0A0A0A)
-    override val Surface = Color(0xFF141414)
-    override val CardBg = Color(0xFF1E1E1E)
-    override val CardBgSoft = Color(0xFF181818)
-    override val CardSoft = Color(0xFF181818)
-    override val TextPrimary = Color(0xFFF0F0F0)
-    override val TextSecondary = Color(0xFFA0A0A0)
-    override val TextTertiary = Color(0xFF6B6B6B)
-    override val Accent = Color(0xFF39C5BB)
-    override val AccentDark = Color(0xFF2AA89F)
-    override val AccentPink = Color(0xFFFF77B7)
-    override val AccentBlue = Color(0xFF5FD7FF)
-    override val GlassStroke = Color(0x18FFFFFF)
-    override val InfoBg = Color(0xFF1A2925)
-    override val InfoText = Color(0xFF7ECEB8)
-    override val White = Color.White
-    override val LightDivider = Color(0x12FFFFFF)
-    override val WeekSelectedBg = Color(0x12FFFFFF)
-    override val InputBg = Color(0xFF1A1A1A)
-    override val Success = Color(0xFF30D158)
-    override val Error = Color(0xFFFF6961)
-    override val NavBar = Color(0xF0141414)
-}
-
-// Light theme color scheme
-object LightAppColorScheme : DynamicColors {
-    override val Background = Color(0xFFF4FAF9)
-    override val Surface = Color.White
-    override val CardBg = Color(0xFFF8FFFE)
-    override val CardBgSoft = Color(0xFFEDF8F6)
-    override val CardSoft = Color(0xFFEDF8F6)
-    override val TextPrimary = Color(0xFF0D2F33)
-    override val TextSecondary = Color(0xFF4A7A80)
-    override val TextTertiary = Color(0xFF8AABAE)
-    override val Accent = Color(0xFF39C5BB)
-    override val AccentDark = Color(0xFF2AA89F)
-    override val AccentPink = Color(0xFFFF77B7)
-    override val AccentBlue = Color(0xFF5FD7FF)
-    override val GlassStroke = Color(0x30FFFFFF)
-    override val InfoBg = Color(0xFFE8FFF8)
-    override val InfoText = Color(0xFF1A6B60)
-    override val White = Color.White
-    override val LightDivider = Color(0x0C000000)
-    override val WeekSelectedBg = Color(0x0C000000)
-    override val InputBg = Color(0xFFF0F7F6)
-    override val Success = Color(0xFF34C759)
-    override val Error = Color(0xFFFF3B30)
-    override val NavBar = Color(0xF2FFFFFF)
-}
-
-// Backward-compatible AppColors object (uses CompositionLocal)
-object AppColors {
-    @Composable
-    private fun colors(): DynamicColors {
-        return when (val c = LocalAppColors.current) {
-            is DarkAppColorScheme -> c
-            is LightAppColorScheme -> c
-            else -> DarkAppColorScheme
-        }
-    }
-
-    val Background @Composable get() = colors().Background
-    val Surface @Composable get() = colors().Surface
-    val CardBg @Composable get() = colors().CardBg
-    val CardBgSoft @Composable get() = colors().CardBgSoft
-    val CardSoft @Composable get() = colors().CardSoft
-    val TextPrimary @Composable get() = colors().TextPrimary
-    val TextSecondary @Composable get() = colors().TextSecondary
-    val TextTertiary @Composable get() = colors().TextTertiary
-    val Accent @Composable get() = colors().Accent
-    val AccentDark @Composable get() = colors().AccentDark
-    val AccentPink @Composable get() = colors().AccentPink
-    val AccentBlue @Composable get() = colors().AccentBlue
-    val GlassStroke @Composable get() = colors().GlassStroke
-    val InfoBg @Composable get() = colors().InfoBg
-    val InfoText @Composable get() = colors().InfoText
-    val White @Composable get() = colors().White
-    val LightDivider @Composable get() = colors().LightDivider
-    val WeekSelectedBg @Composable get() = colors().WeekSelectedBg
-    val InputBg @Composable get() = colors().InputBg
-    val Success @Composable get() = colors().Success
-    val Error @Composable get() = colors().Error
-    val NavBar @Composable get() = colors().NavBar
-}
-
-// Interface for color schemes
 interface DynamicColors {
     val Background: Color
     val Surface: Color
@@ -216,7 +53,89 @@ interface DynamicColors {
     val NavBar: Color
 }
 
-// ── Typography ────────────────────────────────────────────────
+/** 深色：中性近黑 + 一丝青调，毛玻璃卡片层次分明 */
+object DarkAppColorScheme : DynamicColors {
+    override val Background = Color(0xFF0B1013)
+    override val Surface = Color(0xFF11181B)
+    override val CardBg = Color(0xFF151E21)
+    override val CardBgSoft = Color(0xFF111A1D)
+    override val CardSoft = Color(0xFF131C1F)
+    override val TextPrimary = Color(0xFFEAF3F2)
+    override val TextSecondary = Color(0xFF9DB5B2)
+    override val TextTertiary = Color(0xFF64807D)
+    override val Accent = Color(0xFF39C5BB)
+    override val AccentDark = Color(0xFF2AA89F)
+    override val AccentPink = Color(0xFFFF77B7)
+    override val AccentBlue = Color(0xFF5FD7FF)
+    override val GlassStroke = Color(0x1AFFFFFF)
+    override val InfoBg = Color(0xFF15221F)
+    override val InfoText = Color(0xFF7ECEB8)
+    override val White = Color.White
+    override val LightDivider = Color(0x10FFFFFF)
+    override val WeekSelectedBg = Color(0x10FFFFFF)
+    override val InputBg = Color(0xFF161F22)
+    override val Success = Color(0xFF30D158)
+    override val Error = Color(0xFFFF6961)
+    override val NavBar = Color(0xF20E1518)
+}
+
+/** 浅色：薄荷白底 + 白色玻璃卡片 */
+object LightAppColorScheme : DynamicColors {
+    override val Background = Color(0xFFF3F9F8)
+    override val Surface = Color.White
+    override val CardBg = Color(0xFFFBFFFE)
+    override val CardBgSoft = Color(0xFFEFF7F5)
+    override val CardSoft = Color(0xFFF2F9F7)
+    override val TextPrimary = Color(0xFF0D2F33)
+    override val TextSecondary = Color(0xFF4A7A80)
+    override val TextTertiary = Color(0xFF8AABAE)
+    override val Accent = Color(0xFF39C5BB)
+    override val AccentDark = Color(0xFF2AA89F)
+    override val AccentPink = Color(0xFFFF77B7)
+    override val AccentBlue = Color(0xFF5FD7FF)
+    override val GlassStroke = Color(0x59FFFFFF)
+    override val InfoBg = Color(0xFFE8FFF8)
+    override val InfoText = Color(0xFF1A6B60)
+    override val White = Color.White
+    override val LightDivider = Color(0x0C0D2F33)
+    override val WeekSelectedBg = Color(0x0C0D2F33)
+    override val InputBg = Color(0xFFEFF7F5)
+    override val Success = Color(0xFF34C759)
+    override val Error = Color(0xFFFF3B30)
+    override val NavBar = Color(0xF7FFFFFF)
+}
+
+// ── CompositionLocal ─────────────────────────────────────────
+
+val LocalAppColors = staticCompositionLocalOf<DynamicColors> { DarkAppColorScheme }
+
+/** Backward-compatible color accessors used across screens. */
+object AppColors {
+    val Background @Composable get() = LocalAppColors.current.Background
+    val Surface @Composable get() = LocalAppColors.current.Surface
+    val CardBg @Composable get() = LocalAppColors.current.CardBg
+    val CardBgSoft @Composable get() = LocalAppColors.current.CardBgSoft
+    val CardSoft @Composable get() = LocalAppColors.current.CardSoft
+    val TextPrimary @Composable get() = LocalAppColors.current.TextPrimary
+    val TextSecondary @Composable get() = LocalAppColors.current.TextSecondary
+    val TextTertiary @Composable get() = LocalAppColors.current.TextTertiary
+    val Accent @Composable get() = LocalAppColors.current.Accent
+    val AccentDark @Composable get() = LocalAppColors.current.AccentDark
+    val AccentPink @Composable get() = LocalAppColors.current.AccentPink
+    val AccentBlue @Composable get() = LocalAppColors.current.AccentBlue
+    val GlassStroke @Composable get() = LocalAppColors.current.GlassStroke
+    val InfoBg @Composable get() = LocalAppColors.current.InfoBg
+    val InfoText @Composable get() = LocalAppColors.current.InfoText
+    val White @Composable get() = LocalAppColors.current.White
+    val LightDivider @Composable get() = LocalAppColors.current.LightDivider
+    val WeekSelectedBg @Composable get() = LocalAppColors.current.WeekSelectedBg
+    val InputBg @Composable get() = LocalAppColors.current.InputBg
+    val Success @Composable get() = LocalAppColors.current.Success
+    val Error @Composable get() = LocalAppColors.current.Error
+    val NavBar @Composable get() = LocalAppColors.current.NavBar
+}
+
+// ── Typography ───────────────────────────────────────────────
 
 val AppTypography = Typography(
     headlineLarge = TextStyle(
@@ -278,7 +197,7 @@ val AppTypography = Typography(
     )
 )
 
-// ── Spacing ───────────────────────────────────────────────────
+// ── Spacing ──────────────────────────────────────────────────
 
 object Spacing {
     val xxs = 2
@@ -291,7 +210,7 @@ object Spacing {
     val xxl = 32
 }
 
-// ── Corner Radius ─────────────────────────────────────────────
+// ── Corner Radius ────────────────────────────────────────────
 
 object CornerRadius {
     val sm = 6
@@ -301,34 +220,44 @@ object CornerRadius {
     val pill = 50
 }
 
-// ── Material 3 Theme Wrapper ──────────────────────────────────
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(CornerRadius.sm.dp),
+    small = RoundedCornerShape(CornerRadius.md.dp),
+    medium = RoundedCornerShape(CornerRadius.lg.dp),
+    large = RoundedCornerShape(CornerRadius.xl.dp),
+    extraLarge = RoundedCornerShape(CornerRadius.xl.dp)
+)
+
+// ── Material 3 Schemes ───────────────────────────────────────
 
 private val StudyLightColors = lightColorScheme(
     primary = Accent,
-    onPrimary = Color.White,
+    onPrimary = OnAccent,
     secondary = AccentPink,
     tertiary = AccentBlue,
-    background = Color(0xFF0A0A0A),
-    surface = Color(0xFF141414),
-    surfaceVariant = Color(0xFF1A1A1A),
-    onSurface = Color(0xFFF0F0F0),
-    onBackground = Color(0xFFF0F0F0),
-    outline = Color(0xFF2A2A2A),
-    outlineVariant = Color(0xFF222222)
+    background = Color(0xFFF3F9F8),
+    surface = Color.White,
+    surfaceVariant = Color(0xFFEFF7F5),
+    onSurface = Color(0xFF0D2F33),
+    onBackground = Color(0xFF0D2F33),
+    onSurfaceVariant = Color(0xFF4A7A80),
+    outline = Color(0xFFD3E7E4),
+    outlineVariant = Color(0xFFE7F1EF)
 )
 
 private val StudyDarkColors = darkColorScheme(
     primary = Accent,
-    onPrimary = Color(0xFF062227),
+    onPrimary = OnAccent,
     secondary = AccentPink,
     tertiary = AccentBlue,
-    background = Color(0xFF0A1A1F),
-    surface = Color(0xFF13252B),
-    surfaceVariant = Color(0xFF1A2E35),
-    onSurface = Color(0xFFE8F4F2),
-    onBackground = Color(0xFFE8F4F2),
-    outline = Color(0xFF3A5560),
-    outlineVariant = Color(0xFF2A4048)
+    background = Color(0xFF0B1013),
+    surface = Color(0xFF11181B),
+    surfaceVariant = Color(0xFF161F22),
+    onSurface = Color(0xFFEAF3F2),
+    onBackground = Color(0xFFEAF3F2),
+    onSurfaceVariant = Color(0xFF9DB5B2),
+    outline = Color(0xFF2C3B3F),
+    outlineVariant = Color(0xFF212D31)
 )
 
 @Composable
@@ -341,14 +270,8 @@ fun StudyReminderComposeTheme(
         MaterialTheme(
             colorScheme = if (darkTheme) StudyDarkColors else StudyLightColors,
             typography = AppTypography,
+            shapes = AppShapes,
             content = content
         )
     }
-}
-
-// Composable function to get current theme colors
-@Composable
-fun currentAppColors(): AppColorScheme {
-    val isDark = isSystemInDarkTheme()
-    return if (isDark) DarkColors else LightColors
 }

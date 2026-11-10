@@ -31,7 +31,7 @@ class AppPickerActivity : AppCompatActivity() {
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 根据设置应用正确的主题
+        // 根据应用内主题应用正确的主题与资源
         val prefs = getSharedPreferences("study_prefs", MODE_PRIVATE)
         val isDark = prefs.getBoolean("opt_dark_theme", true)
         if (isDark) {
@@ -39,11 +39,16 @@ class AppPickerActivity : AppCompatActivity() {
         } else {
             setTheme(R.style.Theme_StudyReminder_Light)
         }
+        // 让 values-night 资源跟随应用内主题，而不是系统主题
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            if (isDark) androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+        )
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_picker)
-        title = "白名单设置"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        findViewById<View>(R.id.tv_back).setOnClickListener { finish() }
 
         rvApps = findViewById(R.id.rv_apps)
         etSearch = findViewById(R.id.et_search_app)

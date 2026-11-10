@@ -18,11 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.model.StudySlot
@@ -30,6 +32,35 @@ import com.study.reminder.model.StudySlot
 // ── Easing Curves (Emil Kowalski style) ───────────────────────
 
 private val EaseOut = androidx.compose.animation.core.CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
+
+// ── Section Label ─────────────────────────────────────────────
+
+/** 分组小标题：左侧短竖条 + 次级文字，用于划分页面区块 */
+@Composable
+fun SectionLabel(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.padding(start = 4.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 3.dp, height = 12.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(AppColors.Accent)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = AppColors.TextSecondary,
+            letterSpacing = 0.6.sp
+        )
+    }
+}
 
 // ── Glass Card ────────────────────────────────────────────────
 
@@ -99,7 +130,8 @@ fun LiquidGlassButton(
     }
 
     val strokeColor = if (primary) Color(0x30FFFFFF) else AppColors.GlassStroke
-    val textColor = if (primary) Color.White else AppColors.TextPrimary
+    // 主色上的深色文字对比度更高，视觉更精致
+    val textColor = if (primary) OnAccent else AppColors.TextPrimary
 
     Box(
         modifier = modifier
@@ -108,6 +140,16 @@ fun LiquidGlassButton(
                 scaleY = scale
                 this.alpha = alpha
             }
+            .then(
+                if (primary) {
+                    Modifier.shadow(
+                        elevation = if (isPressed) 2.dp else 8.dp,
+                        shape = shape,
+                        ambientColor = AppColors.Accent.copy(alpha = 0.4f),
+                        spotColor = AppColors.Accent.copy(alpha = 0.4f)
+                    )
+                } else Modifier
+            )
             .clip(shape)
             .background(backgroundBrush)
             .border(BorderStroke(1.dp, strokeColor), shape)
@@ -115,7 +157,7 @@ fun LiquidGlassButton(
                 interactionSource = interactionSource,
                 indication = null
             ) { onClick() }
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -125,6 +167,43 @@ fun LiquidGlassButton(
             fontSize = 14.sp,
             letterSpacing = 0.2.sp
         )
+    }
+}
+
+// ── Empty State ──────────────────────────────────────────────
+
+@Composable
+fun EmptyState(
+    emoji: String,
+    title: String,
+    hint: String? = null,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 28.dp, horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = emoji, fontSize = 40.sp)
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = AppColors.TextSecondary,
+            textAlign = TextAlign.Center
+        )
+        if (hint != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = hint,
+                fontSize = 12.sp,
+                color = AppColors.TextTertiary,
+                textAlign = TextAlign.Center,
+                lineHeight = 17.sp
+            )
+        }
     }
 }
 
@@ -151,64 +230,80 @@ fun StudySlotItem(
             .padding(bottom = 6.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = slot.label.ifEmpty { "学习时间" },
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AppColors.TextPrimary
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${slot.startLabel}  →  ${slot.endLabel}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AppColors.Accent,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 0.5.sp
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = daysText,
-                    fontSize = 11.sp,
-                    color = AppColors.TextSecondary,
-                    letterSpacing = 0.3.sp
-                )
-            }
-            Switch(
-                checked = slot.enabled,
-                onCheckedChange = { onToggle() },
-                modifier = Modifier.padding(end = 2.dp),
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = AppColors.White,
-                    checkedTrackColor = AppColors.Accent,
-                    uncheckedThumbColor = AppColors.White,
-                    uncheckedTrackColor = AppColors.TextTertiary,
-                    uncheckedBorderColor = AppColors.TextTertiary
-                )
+            // 左侧状态条：启用时显示主色
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .fillMaxHeight()
+                    .background(
+                        if (slot.enabled) AppColors.Accent else Color.Transparent
+                    )
             )
-            IconButton(
-                onClick = onEdit,
-                modifier = Modifier.size(36.dp)
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 13.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "✏️",
-                    fontSize = 14.sp
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = slot.label.ifEmpty { "学习时间" },
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (slot.enabled) AppColors.TextPrimary else AppColors.TextTertiary
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${slot.startLabel}  →  ${slot.endLabel}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (slot.enabled) AppColors.Accent else AppColors.TextTertiary,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = daysText,
+                        fontSize = 11.sp,
+                        color = AppColors.TextSecondary,
+                        letterSpacing = 0.3.sp
+                    )
+                }
+                Switch(
+                    checked = slot.enabled,
+                    onCheckedChange = { onToggle() },
+                    modifier = Modifier.padding(end = 2.dp),
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AppColors.White,
+                        checkedTrackColor = AppColors.Accent,
+                        uncheckedThumbColor = AppColors.White,
+                        uncheckedTrackColor = AppColors.TextTertiary,
+                        uncheckedBorderColor = AppColors.TextTertiary
+                    )
                 )
-            }
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "删除",
-                    tint = AppColors.AccentPink,
-                    modifier = Modifier.size(18.dp)
-                )
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Text(
+                        text = "✏️",
+                        fontSize = 14.sp
+                    )
+                }
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "删除",
+                        tint = AppColors.AccentPink,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }

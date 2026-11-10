@@ -8,6 +8,8 @@
 
 > **[点此前往 GitHub Releases 下载最新 APK](https://github.com/Introduce183/StudyReminder/releases/latest)**
 
+> **v2.4 UI 重构版**：[前往 Release 下载](https://github.com/Introduce183/StudyReminder/releases/tag/v2.4)
+
 ## 项目特点
 
 - 支持按星期配置固定学习时间段

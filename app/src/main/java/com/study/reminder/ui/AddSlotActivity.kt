@@ -34,6 +34,7 @@ import com.study.reminder.ui.compose.AppColors
 import com.study.reminder.ui.compose.CornerRadius
 import com.study.reminder.ui.compose.GlassCard
 import com.study.reminder.ui.compose.LiquidGlassButton
+import com.study.reminder.ui.compose.OnAccent
 import com.study.reminder.ui.compose.StudyReminderComposeTheme
 
 class AddSlotActivity : ComponentActivity() {
@@ -93,6 +94,39 @@ private fun AddSlotScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
+            // 页头
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = if (isEditing) "编辑学习时间段" else "添加学习时间段",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = AppColors.TextPrimary
+                    )
+                    Text(
+                        text = "设置每周重复的学习时段",
+                        fontSize = 12.sp,
+                        color = AppColors.TextTertiary,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+                Text(
+                    text = "取消",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppColors.Accent,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(CornerRadius.sm))
+                        .clickable { onCancel() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+
             // Note
             GlassCard(modifier = Modifier.padding(bottom = 14.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -227,13 +261,6 @@ private fun AddSlotScreen(
                     .fillMaxWidth()
                     .padding(bottom = 12.dp)
             )
-
-            LiquidGlassButton(
-                text = "取消",
-                onClick = onCancel,
-                primary = false,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
@@ -299,13 +326,13 @@ private fun TimeField(
             value = value,
             onValueChange = { onValueChange(it.filter { c -> c.isDigit() }) },
             modifier = Modifier
-                .width(90.dp)
-                .height(60.dp)
+                .width(96.dp)
+                .height(64.dp)
                 .clip(RoundedCornerShape(CornerRadius.md))
                 .background(AppColors.InputBg)
                 .border(1.dp, AppColors.GlassStroke, RoundedCornerShape(CornerRadius.md)),
             textStyle = TextStyle(
-                fontSize = 28.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppColors.TextPrimary,
                 textAlign = TextAlign.Center
@@ -321,9 +348,9 @@ private fun TimeField(
                     if (value.isEmpty()) {
                         Text(
                             text = hint,
-                            fontSize = 28.sp,
+                            fontSize = 30.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppColors.TextTertiary
+                            color = AppColors.TextTertiary.copy(alpha = 0.5f)
                         )
                     }
                     innerTextField()
@@ -368,7 +395,7 @@ private fun DaySelector(
                     text = label,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) Color.White else AppColors.TextSecondary
+                    color = if (isSelected) OnAccent else AppColors.TextSecondary
                 )
             }
         }

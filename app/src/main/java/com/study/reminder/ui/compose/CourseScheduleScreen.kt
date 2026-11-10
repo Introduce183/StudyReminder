@@ -15,12 +15,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import com.study.reminder.R
 import com.study.reminder.model.CourseSchedule
 import com.study.reminder.model.CourseScheduleRepository
@@ -67,33 +67,48 @@ fun CourseScheduleScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            // Title
+            // 标题区
             Text(
                 text = stringResource(R.string.course_schedule),
                 style = MaterialTheme.typography.headlineLarge,
                 color = AppColors.TextPrimary,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            Text(
+                text = if (weekNum > 0) "第 $weekNum 周 · 共 $totalWeeks 周" else "导入 .ics 文件即可同步课表",
+                fontSize = 12.sp,
+                color = AppColors.TextTertiary,
+                letterSpacing = 0.4.sp,
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Semester info + master toggle
+            // 监督开关
             if (courses.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Surface(
+                    shape = RoundedCornerShape(CornerRadius.md),
+                    color = AppColors.CardBgSoft,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
                 ) {
-                    Text(
-                        text = if (weekNum > 0) stringResource(R.string.current_week, weekNum) else stringResource(R.string.course_imported),
-                        fontSize = 13.sp,
-                        color = AppColors.TextSecondary
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(R.string.week_selector),
-                            fontSize = 13.sp,
-                            color = AppColors.TextSecondary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.week_selector),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = AppColors.TextPrimary
+                            )
+                            Text(
+                                text = if (weekNum > 0) stringResource(R.string.current_week, weekNum) else stringResource(R.string.course_imported),
+                                fontSize = 11.sp,
+                                color = AppColors.TextTertiary
+                            )
+                        }
                         Switch(
                             checked = allEnabled,
                             onCheckedChange = { onToggleAll(it) },
@@ -107,10 +122,9 @@ fun CourseScheduleScreen(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Action buttons
+            // 操作按钮
             Row(modifier = Modifier.fillMaxWidth()) {
                 LiquidGlassButton(
                     text = stringResource(R.string.import_course),
@@ -131,31 +145,15 @@ fun CourseScheduleScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (courses.isEmpty()) {
-                // Empty state
                 GlassCard {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = "📚", fontSize = 48.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.no_course),
-                            fontSize = 15.sp,
-                            color = AppColors.TextSecondary
-                        )
-                        Text(
-                            text = stringResource(R.string.import_hint),
-                            fontSize = 12.sp,
-                            color = AppColors.TextTertiary,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
+                    EmptyState(
+                        emoji = "📚",
+                        title = stringResource(R.string.no_course),
+                        hint = stringResource(R.string.import_hint)
+                    )
                 }
             } else {
-                // Week selector
+                // 周选择器
                 if (totalWeeks > 1) {
                     WeekSelector(
                         totalWeeks = totalWeeks,
@@ -172,11 +170,14 @@ fun CourseScheduleScreen(
                 val weekDates = remember(displayWeek, semesterStartDate) {
                     getWeekDates(displayWeek, semesterStartDate)
                 }
+
+                val isCurrentWeek = weekNum > 0 && displayWeek == weekNum
                 GlassCard {
                     TimetableGrid(
                         courses = weekCourses,
                         weekDates = weekDates,
-                        modifier = Modifier.padding(8.dp)
+                        highlightToday = isCurrentWeek,
+                        modifier = Modifier.padding(10.dp)
                     )
                 }
 
@@ -236,7 +237,7 @@ private fun WeekSelector(
                     text = "$week",
                     fontSize = 13.sp,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else AppColors.TextSecondary
+                    color = if (isSelected) OnAccent else AppColors.TextSecondary
                 )
             }
         }
@@ -247,6 +248,7 @@ private fun WeekSelector(
 private fun TimetableGrid(
     courses: List<CourseSchedule>,
     weekDates: List<String>,
+    highlightToday: Boolean,
     modifier: Modifier = Modifier
 ) {
     if (courses.isEmpty()) {
@@ -275,11 +277,21 @@ private fun TimetableGrid(
 
     val dayHeaders = listOf("", "一", "二", "三", "四", "五", "六", "日")
 
+    // 今天：Calendar 周日=1 → 应用内 周一=1
+    val todayDay = remember {
+        val dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        ((dow + 5) % 7) + 1
+    }
+
+    val accent = AppColors.Accent
+    val dividerColor = AppColors.LightDivider
+
     Column(modifier = modifier) {
         // Header row
         Row {
             Box(modifier = Modifier.width(labelWidth))
             for (day in 1..7) {
+                val isToday = highlightToday && day == todayDay
                 Column(
                     modifier = Modifier.width(dayWidth),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -288,13 +300,13 @@ private fun TimetableGrid(
                         text = dayHeaders[day],
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = AppColors.TextPrimary
+                        color = if (isToday) accent else AppColors.TextPrimary
                     )
                     if (day <= weekDates.size) {
                         Text(
                             text = weekDates[day - 1],
                             fontSize = 9.sp,
-                            color = AppColors.TextTertiary
+                            color = if (isToday) accent else AppColors.TextTertiary
                         )
                     }
                 }
@@ -326,16 +338,20 @@ private fun TimetableGrid(
 
             // 7 day columns
             for (day in 1..7) {
+                val isToday = highlightToday && day == todayDay
                 Box(
                     modifier = Modifier
                         .width(dayWidth)
                         .height(hourHeight * hours.size)
+                        .background(
+                            if (isToday) accent.copy(alpha = 0.05f) else Color.Transparent
+                        )
                 ) {
                     // Hour grid lines
                     for (hour in hours) {
                         val offsetY = ((hour - minHour) * hourHeight.value).dp
                         HorizontalDivider(
-                            color = AppColors.LightDivider,
+                            color = dividerColor,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .offset(y = offsetY)
@@ -350,7 +366,7 @@ private fun TimetableGrid(
 
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = color.copy(alpha = 0.15f),
+                            color = color.copy(alpha = 0.16f),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 1.dp)

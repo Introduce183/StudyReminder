@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 深色主题颜色 -->
-    <color name="bg_main">#0A0A0A</color>
-    <color name="card_bg">#1E1E1E</color>
-    <color name="card_bg_soft">#181818</color>
-    <color name="text_primary">#F0F0F0</color>
-    <color name="text_secondary">#A0A0A0</color>
-    <color name="text_tertiary">#6B6B6B</color>
+    <!-- 深色主题颜色：与 Compose 深色主题保持一致 -->
+    <color name="bg_main">#0B1013</color>
+    <color name="card_bg">#151E21</color>
+    <color name="card_bg_soft">#111A1D</color>
+    <color name="text_primary">#EAF3F2</color>
+    <color name="text_secondary">#9DB5B2</color>
+    <color name="text_tertiary">#64807D</color>
     <color name="accent">#39C5BB</color>
     <color name="accent_dark">#2AA89F</color>
     <color name="accent_light">#8BF2E7</color>
     <color name="accent_pink">#FF77B7</color>
     <color name="accent_blue">#5FD7FF</color>
-    <color name="glass_stroke">#18FFFFFF</color>
+    <color name="on_accent">#06272B</color>
+    <color name="glass_stroke">#1AFFFFFF</color>
     <color name="glass_fill">#EE1A1A1A</color>
     <color name="glass_fill_dark">#CC1A1A1A</color>
-    <color name="info_bg">#1A2925</color>
+    <color name="info_bg">#15221F</color>
     <color name="info_text">#7ECEB8</color>
-    <color name="nav_bar">#F0141414</color>
-    <color name="input_bg">#1A1A1A</color>
+    <color name="nav_bar">#F20E1518</color>
+    <color name="input_bg">#161F22</color>
     <color name="white">#FFFFFF</color>
 </resources>

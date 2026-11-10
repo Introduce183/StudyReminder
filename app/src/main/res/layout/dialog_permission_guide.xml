@@ -4,22 +4,22 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingStart="24dp"
-    android:paddingTop="20dp"
+    android:paddingTop="14dp"
     android:paddingEnd="24dp"
     android:paddingBottom="24dp">
 
     <View
-        android:layout_width="40dp"
+        android:layout_width="36dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="18dp"
         android:background="@color/text_tertiary" />
 
     <TextView
         android:id="@+id/tv_sheet_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="10dp"
         android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold" />
@@ -35,9 +35,10 @@
 
     <Button
         android:id="@+id/btn_sheet_primary"
+        style="@style/Widget.StudyReminder.Button.Primary"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginBottom="10dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="8dp"
         android:text="继续" />
 
     <Button
@@ -45,5 +46,6 @@
         style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="44dp"
+        android:textColor="@color/accent"
         android:text="稍后" />
 </LinearLayout>
