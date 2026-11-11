@@ -18,9 +18,13 @@ class ScreenAccessibilityService : AccessibilityService() {
 
     companion object {
         var lastPackageName: String = ""
+        private var lastEventTime: Long = 0L
         private var lastReminderPkg: String = ""
         private var lastReminderTime: Long = 0L
+        /** 停留在同一个分心应用内时的重复提醒冷却 */
         private const val COOLDOWN_MS = 5 * 60 * 1000L
+        /** 同一包名连续事件的去重窗口（避免窗口切换事件风暴） */
+        private const val SAME_PACKAGE_DEDUPE_MS = 1_500L
 
         @Volatile private var cachedInStudyTime: Boolean? = null
         @Volatile private var studyTimeCacheTime: Long = 0L
@@ -54,15 +58,33 @@ class ScreenAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString() ?: return
-        if (pkg == lastPackageName) return
+        val now = android.os.SystemClock.elapsedRealtime()
+
+        // 仅对短时间内的同一包名重复事件去重，不能永久拦截
+        if (pkg == lastPackageName && now - lastEventTime < SAME_PACKAGE_DEDUPE_MS) return
         lastPackageName = pkg
+        lastEventTime = now
+
         // Refresh cache if package unknown (newly installed app)
         if (pkg !in launcherPkgs) {
             cacheLauncherPackages()
         }
-        if (pkg !in launcherPkgs) return
-        if (pkg == packageName) return
+        // 离开受监控的应用（最近任务、系统界面等）也算“离开”，重置同应用冷却
+        if (pkg !in launcherPkgs) {
+            resetAppReminderGuard()
+            return
+        }
+        if (pkg == packageName) {
+            resetAppReminderGuard()
+            return
+        }
         checkAndRemind(pkg)
+    }
+
+    /** 用户离开分心应用后重置冷却，下次再进入同一应用应重新提醒 */
+    private fun resetAppReminderGuard() {
+        lastReminderPkg = ""
+        lastReminderTime = 0L
     }
 
     private fun isWhitelistedCached(pkg: String): Boolean {
@@ -76,8 +98,13 @@ class ScreenAccessibilityService : AccessibilityService() {
 
     private fun checkAndRemind(pkg: String) {
         if (!isInStudyTime()) return
-        if (isWhitelistedCached(pkg)) return
+        if (isWhitelistedCached(pkg)) {
+            // 回到白名单应用（含桌面）：视为离开分心应用，重置冷却
+            resetAppReminderGuard()
+            return
+        }
         val now = System.currentTimeMillis()
+        // 仅拦截停留在同一分心应用内的重复提醒
         if (pkg == lastReminderPkg && now - lastReminderTime < COOLDOWN_MS) return
 
         lastReminderPkg = pkg

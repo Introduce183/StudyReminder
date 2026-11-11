@@ -8,7 +8,7 @@
 
 > **[点此前往 GitHub Releases 下载最新 APK](https://github.com/Introduce183/StudyReminder/releases/latest)**
 
-> **v2.4 UI 重构版**：[前往 Release 下载](https://github.com/Introduce183/StudyReminder/releases/tag/v2.4)
+> **v2.4.1 最新版**：[前往 Release 下载](https://github.com/Introduce183/StudyReminder/releases/tag/v2.4.1)
 
 ## 项目特点
 
