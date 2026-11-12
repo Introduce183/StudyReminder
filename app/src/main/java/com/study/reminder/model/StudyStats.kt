@@ -2,6 +2,7 @@ package com.study.reminder.model
 
 import android.content.Context
 import android.util.Log
+import com.study.reminder.helper.StudyTimeCache
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -71,6 +72,8 @@ object StudyStatsRepository {
             .putLong(PREF_ACTIVE_START, System.currentTimeMillis())
             .putLong(PREF_ACTIVE_SLOT_ID, slotId)
             .apply()
+        // 手动/自动开始学习后，立即让监督判定生效
+        StudyTimeCache.invalidate()
     }
 
     fun endSession(context: Context) {
@@ -83,6 +86,8 @@ object StudyStatsRepository {
 
         // 清除活跃会话标记
         prefs.edit().remove(PREF_ACTIVE_START).remove(PREF_ACTIVE_SLOT_ID).apply()
+        // 结束学习后立即让监督判定失效
+        StudyTimeCache.invalidate()
 
         if (durationMin < 1) return
 

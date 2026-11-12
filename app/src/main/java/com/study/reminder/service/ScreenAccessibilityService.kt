@@ -103,10 +103,11 @@ class ScreenAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 以实时数据为准：没有启用中的时间段 / 进行中的课程时，
-        // 说明刚关闭时段或缓存过期，不提醒、也不启动计时。
+        // 以实时数据为准：没有启用中的时间段 / 进行中的课程 /
+        // 手动开始的学习会话时，不提醒、也不启动计时。
         val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(this)
-        if (remaining <= 0) {
+        val hasSession = StudyStatsRepository.hasActiveSession(this)
+        if (remaining <= 0 && !hasSession) {
             StudyTimeCache.invalidate()
             return
         }
@@ -119,7 +120,7 @@ class ScreenAccessibilityService : AccessibilityService() {
         lastReminderTime = now
 
         // 监督触发时自动开始学习计时（如果尚未开始）
-        if (!StudyStatsRepository.hasActiveSession(this)) {
+        if (!hasSession) {
             StudyStatsRepository.startSession(this, StudyStatsRepository.getActiveSlotId(this))
             val serviceIntent = android.content.Intent(this, com.study.reminder.service.TimerService::class.java).apply {
                 action = TimerService.ACTION_START
@@ -144,6 +145,9 @@ class ScreenAccessibilityService : AccessibilityService() {
     }
 
     private fun isInStudyTimeUncached(): Boolean {
+        // 手动开始的学习会话：即使不在固定时间段内也应持续监督
+        if (StudyStatsRepository.hasActiveSession(this)) return true
+
         val now = Calendar.getInstance()
         val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
         val dow = now.get(Calendar.DAY_OF_WEEK)
