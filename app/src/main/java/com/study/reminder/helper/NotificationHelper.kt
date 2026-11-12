@@ -264,4 +264,13 @@ object NotificationHelper {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(FOREGROUND_ID)
     }
+
+    /** 仅取消提醒通知，不影响学习计时前台通知 */
+    fun cancelAlert(context: Context) {
+        alertHandler?.removeCallbacksAndMessages(null)
+        alertHandler = null
+        alertRunnable = null
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.cancel(ALERT_ID)
+    }
 }

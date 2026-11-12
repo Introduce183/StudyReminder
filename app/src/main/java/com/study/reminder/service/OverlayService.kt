@@ -14,6 +14,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import com.study.reminder.R
 import com.study.reminder.helper.NotificationHelper
+import com.study.reminder.helper.SnoozeScheduler
 
 class OverlayService : Service() {
 
@@ -30,6 +31,7 @@ class OverlayService : Service() {
     private var windowManager: WindowManager? = null
     private var dynamicIslandView: View? = null
     private var fullscreenView: View? = null
+    private var fullscreenDismissRunnable: Runnable? = null
     @Volatile private var isRemovingIsland = false
     @Volatile private var isRemovingFullscreen = false
     private val handler = Handler(Looper.getMainLooper())
@@ -143,6 +145,8 @@ class OverlayService : Service() {
         }
 
         removeFullscreenAlert()
+        // 新的提醒出现时，取消上一轮尚未到点的「再看 30 秒」
+        SnoozeScheduler.cancel(this)
         val inflater = LayoutInflater.from(this)
         val view = inflater.inflate(R.layout.overlay_fullscreen_alert, null)
 
@@ -175,18 +179,37 @@ class OverlayService : Service() {
         view.animate().alpha(1f).setDuration(220L).start()
 
         val overlayConfirmButton = view.findViewById<View>(R.id.btn_overlay_confirm)
+        val snoozeButton = view.findViewById<View>(R.id.btn_overlay_snooze)
+
+        if (goHomeOnShow) {
+            // 强制返回桌面模式：不提供「再看 30 秒」
+            snoozeButton.visibility = View.GONE
+        } else {
+            snoozeButton.visibility = View.VISIBLE
+            snoozeButton.setOnClickListener {
+                NotificationHelper.cancelAlert(this)
+                removeFullscreenAlert()
+                SnoozeScheduler.schedule(this, SnoozeScheduler.DEFAULT_DELAY_SECONDS)
+                stopSelf()
+            }
+        }
+
         overlayConfirmButton.setOnClickListener {
+            SnoozeScheduler.cancel(this)
             removeFullscreenAlert()
             goHome()
             stopSelf()
         }
 
         val autoDismissDelay = if (goHomeOnShow) 1200L else 10_000L
-        handler.postDelayed({
+        val dismissRunnable = Runnable {
+            SnoozeScheduler.cancel(this)
             removeFullscreenAlert()
             if (goHomeOnShow) goHome()
             stopSelf()
-        }, autoDismissDelay)
+        }
+        fullscreenDismissRunnable = dismissRunnable
+        handler.postDelayed(dismissRunnable, autoDismissDelay)
     }
 
     private fun ensureOverlayPermission(message: String, emoji: String): Boolean {
@@ -198,6 +221,8 @@ class OverlayService : Service() {
     }
 
     private fun removeFullscreenAlert() {
+        fullscreenDismissRunnable?.let { handler.removeCallbacks(it) }
+        fullscreenDismissRunnable = null
         if (isRemovingFullscreen) return
         isRemovingFullscreen = true
         fullscreenView?.let {

@@ -84,6 +84,12 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".service.SnoozeReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.study.reminder.SNOOZE_TRIGGER" />
+            </intent-filter>
+        </receiver>
+
         <receiver android:name=".service.BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

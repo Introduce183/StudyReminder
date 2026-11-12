@@ -12,6 +12,7 @@ import com.study.reminder.databinding.ActivityFullscreenAlertBinding
 import com.study.reminder.helper.ButtonMotionHelper
 import com.study.reminder.helper.CharacterHelper
 import com.study.reminder.helper.NotificationHelper
+import com.study.reminder.helper.SnoozeScheduler
 
 class FullScreenAlertActivity : AppCompatActivity() {
 
@@ -78,7 +79,16 @@ class FullScreenAlertActivity : AppCompatActivity() {
         binding.tvAlertMessage.alpha = 0f
         binding.tvAlertMessage.animate().alpha(1f).setStartDelay(300).setDuration(400).start()
 
+        // 强制返回桌面模式不提供「再看 30 秒」
+        binding.btnSnooze.visibility = if (goHomeOnShow) android.view.View.GONE else android.view.View.VISIBLE
+        binding.btnSnooze.setOnClickListener {
+            NotificationHelper.cancelAlert(this)
+            SnoozeScheduler.schedule(this, SnoozeScheduler.DEFAULT_DELAY_SECONDS)
+            finish()
+        }
+
         binding.btnConfirm.setOnClickListener {
+            SnoozeScheduler.cancel(this)
             NotificationHelper.cancelAll(this)
             goHome()
             finish()
