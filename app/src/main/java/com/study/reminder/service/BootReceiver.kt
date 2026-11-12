@@ -14,6 +14,11 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED -> {
                 SlotScheduler.rescheduleAll(context)
                 CourseScheduler.rescheduleAll(context)
+                // 开机后恢复保活前台服务（用户可在设置中关闭）
+                val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+                if (prefs.getBoolean("opt_keep_alive", true)) {
+                    KeepAliveService.start(context)
+                }
             }
 
             AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {

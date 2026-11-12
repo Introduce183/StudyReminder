@@ -10,6 +10,7 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.provider.Settings.Secure
 import android.view.LayoutInflater
@@ -42,6 +43,7 @@ import com.study.reminder.model.CourseScheduleRepository
 import com.study.reminder.model.SlotRepository
 import com.study.reminder.model.StudySlot
 import com.study.reminder.model.StudyStatsRepository
+import com.study.reminder.service.KeepAliveService
 import com.study.reminder.service.TimerService
 import com.study.reminder.ui.compose.CourseScheduleScreen
 import com.study.reminder.ui.compose.SettingsScreen
@@ -56,6 +58,9 @@ class MainActivity : ComponentActivity() {
         private const val PREFS_NAME = "study_prefs"
         private const val KEY_STARTUP_BACKGROUND_GUIDE_SHOWN = "startup_background_guide_shown"
         private const val KEY_FULLSCREEN_BACKGROUND_GUIDE_SHOWN = "fullscreen_background_guide_shown"
+        private const val KEY_ACCESSIBILITY_ENABLED_ONCE = "accessibility_enabled_once"
+        private const val KEY_ACCESSIBILITY_OFF_NOTICE_TIME = "accessibility_off_notice_time"
+        private const val ACCESSIBILITY_OFF_NOTICE_INTERVAL = 12 * 60 * 60 * 1000L
     }
 
     private var isShowingStartupGuide = false
@@ -68,6 +73,9 @@ class MainActivity : ComponentActivity() {
     private val fullScreenState = mutableStateOf(false)
     private val forceHomeState = mutableStateOf(false)
     private val isDarkThemeState = mutableStateOf(true)
+    private val accessibilityEnabledState = mutableStateOf(false)
+    private val keepAliveState = mutableStateOf(true)
+    private val batteryOptimizationIgnoredState = mutableStateOf(false)
 
     // Course schedule state
     private val coursesState = mutableStateListOf<CourseSchedule>()
@@ -262,7 +270,7 @@ class MainActivity : ComponentActivity() {
                     onAccessibilityGuide = {
                         showGuideSheet(
                             title = "关于无障碍权限",
-                            message = "无障碍权限只用于在学习时间内检测是否切到白名单之外的应用。\n\n不开启也不会影响固定时间段的到点提醒。",
+                            message = "无障碍权限只用于在学习时间内检测是否切到白名单之外的应用。\n\n不开启也不会影响固定时间段的到点提醒。\n\n注意：部分系统在后台清理或重启后会关闭无障碍服务，需要重新开启；建议开启自启动、省电策略设为「无限制」，并在最近任务中锁定本应用。",
                             primaryText = "去开启",
                             secondaryText = "暂不"
                         ) {
@@ -270,10 +278,20 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     isDarkTheme = isDarkThemeState.value,
+                    accessibilityEnabled = accessibilityEnabledState.value,
+                    keepAliveEnabled = keepAliveState.value,
+                    batteryOptimizationIgnored = batteryOptimizationIgnoredState.value,
                     onThemeChange = { isDark ->
                         isDarkThemeState.value = isDark
                         saveThemePreference(isDark)
-                    }
+                    },
+                    onKeepAliveChange = { enabled ->
+                        keepAliveState.value = enabled
+                        saveOptions()
+                        if (enabled) KeepAliveService.start(activity)
+                        else KeepAliveService.stop(activity)
+                    },
+                    onRequestBatteryOptimization = { requestIgnoreBatteryOptimizations() }
                 )
                         }
                     }
@@ -290,7 +308,75 @@ class MainActivity : ComponentActivity() {
         SlotScheduler.rescheduleAll(this)
         refreshCourseList()
         CourseScheduler.rescheduleAll(this)
+        refreshAccessibilityState()
+        refreshBatteryOptimizationState()
+        applyKeepAliveService()
         maybeShowStartupGuide()
+        maybeNoticeAccessibilityDisabled()
+    }
+
+    private fun applyKeepAliveService() {
+        if (keepAliveState.value) {
+            KeepAliveService.start(this)
+        } else {
+            KeepAliveService.stop(this)
+        }
+    }
+
+    private fun refreshBatteryOptimizationState() {
+        val powerManager = getSystemService(PowerManager::class.java)
+        batteryOptimizationIgnoredState.value =
+            powerManager?.isIgnoringBatteryOptimizations(packageName) == true
+    }
+
+    private fun requestIgnoreBatteryOptimizations() {
+        try {
+            startActivity(
+                Intent(
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:$packageName")
+                )
+            )
+        } catch (_: Exception) {
+            runCatching {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            }
+        }
+    }
+
+    private fun refreshAccessibilityState() {
+        accessibilityEnabledState.value = isAccessibilityServiceEnabled()
+    }
+
+    /**
+     * 无障碍服务被系统关闭后给出一次提醒（12 小时内最多一次）。
+     * 系统/厂商后台清理无法由 App 阻止，只能引导用户重新开启。
+     */
+    private fun maybeNoticeAccessibilityDisabled() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        if (accessibilityEnabledState.value) {
+            prefs.edit()
+                .putBoolean(KEY_ACCESSIBILITY_ENABLED_ONCE, true)
+                .remove(KEY_ACCESSIBILITY_OFF_NOTICE_TIME)
+                .apply()
+            return
+        }
+        if (isShowingStartupGuide || activeGuideDialog != null) return
+        if (!prefs.getBoolean(KEY_ACCESSIBILITY_ENABLED_ONCE, false)) return
+
+        val now = System.currentTimeMillis()
+        val last = prefs.getLong(KEY_ACCESSIBILITY_OFF_NOTICE_TIME, 0L)
+        if (now - last < ACCESSIBILITY_OFF_NOTICE_INTERVAL) return
+
+        prefs.edit().putLong(KEY_ACCESSIBILITY_OFF_NOTICE_TIME, now).apply()
+        showGuideSheet(
+            title = "无障碍监督已被系统关闭",
+            message = "后台清理、重启或系统省电策略可能会关闭无障碍服务。重新开启后，学习中途切换应用的提醒才会恢复。\n\n建议同时开启自启动、把省电策略设为「无限制」，并在最近任务中锁定本应用。",
+            primaryText = "去重新开启",
+            secondaryText = "知道了"
+        ) {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
     }
 
     private fun loadSlots() {
@@ -361,6 +447,7 @@ class MainActivity : ComponentActivity() {
         fullScreenState.value = prefs.getBoolean("opt_fullscreen", false)
         forceHomeState.value = prefs.getBoolean("opt_force_home", false)
         isDarkThemeState.value = prefs.getBoolean("opt_dark_theme", true)
+        keepAliveState.value = prefs.getBoolean("opt_keep_alive", true)
     }
 
     private fun saveOptions() {
@@ -369,6 +456,7 @@ class MainActivity : ComponentActivity() {
             putBoolean("opt_island", islandState.value)
             putBoolean("opt_fullscreen", fullScreenState.value)
             putBoolean("opt_force_home", forceHomeState.value)
+            putBoolean("opt_keep_alive", keepAliveState.value)
         }.apply()
     }
 
@@ -435,7 +523,7 @@ class MainActivity : ComponentActivity() {
             isShowingStartupGuide = true
             showGuideSheet(
                 title = "建议打开后台弹出和自启动",
-                message = "为了让提醒更稳定，建议继续检查后台弹出界面、自启动和电池优化白名单。不同机型入口不一样，应用会尽量帮你打开对应页面。",
+                message = "为了让提醒更稳定，建议继续检查后台弹出界面、自启动和电池优化白名单，并在最近任务中锁定本应用，避免系统后台清理。不同机型入口不一样，应用会尽量帮你打开对应页面。",
                 primaryText = "去设置",
                 secondaryText = "先跳过",
                 onDismiss = {

@@ -36,11 +36,15 @@ class ScreenAccessibilityService : AccessibilityService() {
     private val WHITELIST_CACHE_TTL = 60_000L
 
     override fun onServiceConnected() {
-        serviceInfo = AccessibilityServiceInfo().apply {
-            eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-            feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
-            notificationTimeout = 500
-        }
+        // 在 XML 配置的基础上追加窗口监听能力：
+        // 部分游戏 / 全屏应用不会稳定发送 TYPE_WINDOW_STATE_CHANGED
+        val info = serviceInfo ?: AccessibilityServiceInfo()
+        info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED
+        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
+        info.notificationTimeout = 500
+        info.flags = info.flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+        serviceInfo = info
         cacheLauncherPackages()
     }
 
@@ -56,7 +60,11 @@ class ScreenAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        val pkg = event?.packageName?.toString() ?: return
+        if (event == null) return
+        // 部分游戏/全屏窗口的包名为空，退回到当前活动窗口的包名
+        val pkg = event.packageName?.toString()
+            ?: rootInActiveWindow?.packageName?.toString()
+            ?: return
         val now = android.os.SystemClock.elapsedRealtime()
 
         // 仅对短时间内的同一包名重复事件去重，不能永久拦截
@@ -68,9 +76,12 @@ class ScreenAccessibilityService : AccessibilityService() {
         if (pkg !in launcherPkgs) {
             cacheLauncherPackages()
         }
-        // 离开受监控的应用（最近任务、系统界面等）也算“离开”，重置同应用冷却
+        // 离开受监控的应用（最近任务、系统界面等）也算“离开”，重置同应用冷却。
+        // 仅对真正的窗口切换生效，输入法 / 系统弹窗的窗口变化不重置。
         if (pkg !in launcherPkgs) {
-            resetAppReminderGuard()
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                resetAppReminderGuard()
+            }
             return
         }
         if (pkg == packageName) {

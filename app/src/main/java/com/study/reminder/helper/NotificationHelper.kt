@@ -18,8 +18,10 @@ import com.study.reminder.ui.MainActivity
 object NotificationHelper {
 
     const val FOREGROUND_ID = 1001
+    const val KEEP_ALIVE_ID = 1002
     const val ALERT_ID = 2001
     private const val CHANNEL_FOREGROUND = "ch_foreground"
+    private const val CHANNEL_KEEP_ALIVE = "ch_keep_alive"
     private const val CHANNEL_ALERT = "ch_alert"
     private const val REQUEST_MAIN = 3001
     private const val REQUEST_ALERT = 3002
@@ -37,6 +39,18 @@ object NotificationHelper {
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Foreground countdown for the active study slot."
+            }
+        )
+
+        nm.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_KEEP_ALIVE,
+                "后台保活",
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                description = "保持提醒与无障碍监督在后台在线。"
+                setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
             }
         )
 
@@ -93,6 +107,19 @@ object NotificationHelper {
             .setContentIntent(getMainPendingIntent(context))
             .addAction(0, "Stop", getStopPendingIntent(context))
             .setSilent(true)
+            .build()
+    }
+
+    fun buildKeepAliveNotification(context: Context): Notification {
+        return NotificationCompat.Builder(context, CHANNEL_KEEP_ALIVE)
+            .setSmallIcon(R.drawable.ic_timer)
+            .setContentTitle("学习提醒器运行中")
+            .setContentText("提醒与无障碍监督保持在线")
+            .setOngoing(true)
+            .setSilent(true)
+            .setShowWhen(false)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setContentIntent(getMainPendingIntent(context))
             .build()
     }
 
