@@ -54,6 +54,12 @@ object StudyStatsRepository {
     private const val PREF_DISTRACTIONS = "distraction_events"
     private const val PREF_ACTIVE_START = "active_session_start"
     private const val PREF_ACTIVE_SLOT_ID = "active_slot_id"
+    private const val PREF_ACTIVE_SOURCE = "active_session_source"
+
+    const val SOURCE_MANUAL = "manual"
+    const val SOURCE_SLOT = "slot"
+    const val SOURCE_COURSE = "course"
+    const val SOURCE_AUTO = "auto"
     private val dateFormatTL = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     private val dateFormat: SimpleDateFormat get() = dateFormatTL.get()!!
 
@@ -63,7 +69,7 @@ object StudyStatsRepository {
 
     // ── 会话管理 ──────────────────────────────────────────────
 
-    fun startSession(context: Context, slotId: Long) {
+    fun startSession(context: Context, slotId: Long, source: String = SOURCE_MANUAL) {
         val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
         if (prefs.getLong(PREF_ACTIVE_START, 0L) > 0) {
             endSession(context)
@@ -71,6 +77,7 @@ object StudyStatsRepository {
         prefs.edit()
             .putLong(PREF_ACTIVE_START, System.currentTimeMillis())
             .putLong(PREF_ACTIVE_SLOT_ID, slotId)
+            .putString(PREF_ACTIVE_SOURCE, source)
             .apply()
         // 手动/自动开始学习后，立即让监督判定生效
         StudyTimeCache.invalidate()
@@ -85,7 +92,11 @@ object StudyStatsRepository {
         val durationMin = ((endMs - startMs) / 60_000).toInt().coerceAtLeast(0)
 
         // 清除活跃会话标记
-        prefs.edit().remove(PREF_ACTIVE_START).remove(PREF_ACTIVE_SLOT_ID).apply()
+        prefs.edit()
+            .remove(PREF_ACTIVE_START)
+            .remove(PREF_ACTIVE_SLOT_ID)
+            .remove(PREF_ACTIVE_SOURCE)
+            .apply()
         // 结束学习后立即让监督判定失效
         StudyTimeCache.invalidate()
 
@@ -103,6 +114,11 @@ object StudyStatsRepository {
     fun hasActiveSession(context: Context): Boolean {
         return context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .getLong(PREF_ACTIVE_START, 0L) > 0
+    }
+
+    fun getActiveSessionSource(context: Context): String {
+        return context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+            .getString(PREF_ACTIVE_SOURCE, SOURCE_MANUAL) ?: SOURCE_MANUAL
     }
 
     /**

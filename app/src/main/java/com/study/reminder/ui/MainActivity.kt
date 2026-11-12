@@ -192,11 +192,13 @@ class MainActivity : ComponentActivity() {
                                     CourseScheduleRepository.toggleAllCourses(activity, enabled)
                                     CourseScheduler.rescheduleAll(activity)
                                     refreshCourseList()
+                                    if (!enabled) stopCourseSessionIfNeeded()
                                 },
                                 onDeleteAll = {
                                     CourseScheduleRepository.replaceAllCourses(activity, emptyList())
                                     CourseScheduler.rescheduleAll(activity)
                                     refreshCourseList()
+                                    stopCourseSessionIfNeeded()
                                 }
                             )
                             else -> SettingsScreen(
@@ -313,6 +315,28 @@ class MainActivity : ComponentActivity() {
         applyKeepAliveService()
         maybeShowStartupGuide()
         maybeNoticeAccessibilityDisabled()
+    }
+
+    /**
+     * 关闭课表监督 / 清空课表时，如果当前会话是课表自动开始的，
+     * 同步结束计时并关掉可能已经弹出的提醒。
+     */
+    private fun stopCourseSessionIfNeeded() {
+        if (!StudyStatsRepository.hasActiveSession(this)) return
+        if (StudyStatsRepository.getActiveSessionSource(this) != StudyStatsRepository.SOURCE_COURSE) return
+        // 仍有启用中的手动时间段时，保留会话
+        if (StudyStatsRepository.getActiveSlotIds(this).isNotEmpty()) return
+
+        StudyStatsRepository.endSession(this)
+        startService(Intent(this, TimerService::class.java).apply {
+            action = TimerService.ACTION_STOP
+        })
+        runCatching {
+            startService(Intent(this, com.study.reminder.service.OverlayService::class.java).apply {
+                action = com.study.reminder.service.OverlayService.ACTION_DISMISS
+            })
+        }
+        NotificationHelper.cancelAlert(this)
     }
 
     private fun applyKeepAliveService() {

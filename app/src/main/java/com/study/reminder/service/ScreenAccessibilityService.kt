@@ -132,7 +132,14 @@ class ScreenAccessibilityService : AccessibilityService() {
 
         // 监督触发时自动开始学习计时（如果尚未开始）
         if (!hasSession) {
-            StudyStatsRepository.startSession(this, StudyStatsRepository.getActiveSlotId(this))
+            val activeSlotId = StudyStatsRepository.getActiveSlotId(this)
+            val source = when {
+                activeSlotId > 0L -> StudyStatsRepository.SOURCE_SLOT
+                CourseScheduleRepository.getActiveCoursesNow(this).isNotEmpty() ->
+                    StudyStatsRepository.SOURCE_COURSE
+                else -> StudyStatsRepository.SOURCE_AUTO
+            }
+            StudyStatsRepository.startSession(this, activeSlotId, source)
             val serviceIntent = android.content.Intent(this, com.study.reminder.service.TimerService::class.java).apply {
                 action = TimerService.ACTION_START
                 putExtra(TimerService.EXTRA_DURATION_MINUTES, remaining)
