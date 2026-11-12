@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import com.study.reminder.helper.ReminderDispatcher
 import android.view.accessibility.AccessibilityEvent
+import com.study.reminder.helper.StudyTimeCache
 import com.study.reminder.helper.WhitelistManager
 import com.study.reminder.model.CourseScheduleRepository
 import com.study.reminder.model.SlotRepository
@@ -26,9 +27,7 @@ class ScreenAccessibilityService : AccessibilityService() {
         /** 同一包名连续事件的去重窗口（避免窗口切换事件风暴） */
         private const val SAME_PACKAGE_DEDUPE_MS = 1_500L
 
-        @Volatile private var cachedInStudyTime: Boolean? = null
-        @Volatile private var studyTimeCacheTime: Long = 0L
-        private const val STUDY_TIME_CACHE_TTL = 30_000L
+        private const val STUDY_TIME_CACHE_TTL = 10_000L
     }
 
     private val launcherPkgs = mutableSetOf<String>()
@@ -103,6 +102,15 @@ class ScreenAccessibilityService : AccessibilityService() {
             resetAppReminderGuard()
             return
         }
+
+        // 以实时数据为准：没有启用中的时间段 / 进行中的课程时，
+        // 说明刚关闭时段或缓存过期，不提醒、也不启动计时。
+        val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(this)
+        if (remaining <= 0) {
+            StudyTimeCache.invalidate()
+            return
+        }
+
         val now = System.currentTimeMillis()
         // 仅拦截停留在同一分心应用内的重复提醒
         if (pkg == lastReminderPkg && now - lastReminderTime < COOLDOWN_MS) return
@@ -112,15 +120,12 @@ class ScreenAccessibilityService : AccessibilityService() {
 
         // 监督触发时自动开始学习计时（如果尚未开始）
         if (!StudyStatsRepository.hasActiveSession(this)) {
-            StudyStatsRepository.startSession(this, -1L)
-            val remaining = StudyStatsRepository.getActiveSlotRemainingMinutes(this)
-            if (remaining > 0) {
-                val serviceIntent = android.content.Intent(this, com.study.reminder.service.TimerService::class.java).apply {
-                    action = TimerService.ACTION_START
-                    putExtra(TimerService.EXTRA_DURATION_MINUTES, remaining)
-                }
-                startForegroundService(serviceIntent)
+            StudyStatsRepository.startSession(this, StudyStatsRepository.getActiveSlotId(this))
+            val serviceIntent = android.content.Intent(this, com.study.reminder.service.TimerService::class.java).apply {
+                action = TimerService.ACTION_START
+                putExtra(TimerService.EXTRA_DURATION_MINUTES, remaining)
             }
+            startForegroundService(serviceIntent)
         }
 
         val (message, emoji) = com.study.reminder.helper.TauntHelper.random()
@@ -129,12 +134,12 @@ class ScreenAccessibilityService : AccessibilityService() {
 
     private fun isInStudyTime(): Boolean {
         val now = System.currentTimeMillis()
-        cachedInStudyTime?.let {
-            if (now - studyTimeCacheTime < STUDY_TIME_CACHE_TTL) return it
+        StudyTimeCache.cachedInStudyTime?.let {
+            if (now - StudyTimeCache.cacheTime < STUDY_TIME_CACHE_TTL) return it
         }
         val result = isInStudyTimeUncached()
-        cachedInStudyTime = result
-        studyTimeCacheTime = now
+        StudyTimeCache.cachedInStudyTime = result
+        StudyTimeCache.cacheTime = now
         return result
     }
 

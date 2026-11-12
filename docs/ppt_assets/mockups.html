@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  html, body { margin: 0; padding: 0; background: #000; }
+  body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; }
+  .phone {
+    width: 390px; height: 844px; background: #0B1013; color: #EAF3F2;
+    position: relative; overflow: hidden;
+  }
+  .status {
+    height: 40px; padding: 0 22px; display: flex; align-items: flex-end;
+    justify-content: space-between; font-size: 13px; font-weight: 600;
+    color: #EAF3F2; padding-bottom: 6px; letter-spacing: .3px;
+  }
+  .status .right { font-size: 11px; color: #9DB5B2; letter-spacing: 1px; }
+  .content { padding: 6px 18px 0; }
+  h1 { font-size: 24px; margin: 6px 0 2px; letter-spacing: -0.3px; }
+  .date { font-size: 11px; color: #64807D; margin-bottom: 14px; letter-spacing: .4px; }
+  .card {
+    background: #151E21; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 14px; margin-bottom: 12px;
+  }
+  .center { display: flex; flex-direction: column; align-items: center; }
+  .ring {
+    width: 172px; height: 172px; border-radius: 50%;
+    background: conic-gradient(#39C5BB 0deg 252deg, rgba(255,255,255,0.07) 252deg 360deg);
+    display: flex; align-items: center; justify-content: center;
+    margin: 6px 0 10px;
+  }
+  .ring-inner {
+    width: 148px; height: 148px; border-radius: 50%; background: #151E21;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .live { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #39C5BB; font-weight: 700; letter-spacing: 1px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #39C5BB; box-shadow: 0 0 8px #39C5BB; }
+  .time { font-family: Consolas, monospace; font-size: 29px; font-weight: 700; letter-spacing: 1px; margin: 5px 0 2px; }
+  .remain { font-size: 10px; color: #64807D; }
+  .btn {
+    border: none; border-radius: 12px; padding: 11px 22px; font-size: 13px;
+    font-weight: 600; font-family: inherit;
+  }
+  .btn.ghost { background: #161F22; color: #EAF3F2; border: 1px solid rgba(255,255,255,0.08); }
+  .btn.primary { background: #39C5BB; color: #06272B; box-shadow: 0 6px 18px rgba(57,197,187,.35); }
+  .section { font-size: 11px; color: #9DB5B2; font-weight: 700; letter-spacing: .8px; margin: 2px 4px 7px; display: flex; align-items: center; gap: 7px; }
+  .section::before { content: ''; width: 3px; height: 11px; border-radius: 2px; background: #39C5BB; }
+  .stats { display: flex; gap: 10px; }
+  .stat { flex: 1; background: #101A1D; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 11px 8px; text-align: center; }
+  .stat b { display: block; font-size: 20px; margin-bottom: 3px; }
+  .stat span { font-size: 10px; color: #9DB5B2; }
+  .accent { color: #39C5BB; } .pink { color: #FF77B7; }
+  .seg { display: flex; background: #101A1D; border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+  .seg-item { flex: 1; text-align: center; font-size: 12px; padding: 7px 0; color: #9DB5B2; border-radius: 8px; }
+  .seg-item.active { background: #39C5BB; color: #06272B; font-weight: 700; }
+  .period { text-align: center; font-size: 11px; color: #9DB5B2; margin-bottom: 12px; }
+  .period b { color: #39C5BB; font-weight: 400; padding: 0 10px; }
+  .chart { display: flex; align-items: flex-end; justify-content: space-between; height: 92px; margin-top: 14px; padding: 0 6px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 26px; }
+  .bar-val { font-size: 8px; color: #64807D; height: 10px; }
+  .bar { width: 13px; background: #39C5BB; border-radius: 3px 3px 0 0; }
+  .bar-bg { width: 13px; height: 70px; background: rgba(57,197,187,0.10); border-radius: 3px 3px 0 0; position: relative; display: flex; align-items: flex-end; }
+  .bar-fill { width: 100%; background: #39C5BB; border-radius: 3px 3px 0 0; }
+  .bar-lbl { font-size: 8px; color: #64807D; }
+  .nav {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 62px;
+    background: #0E1518; border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-around; padding-bottom: 6px;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9px; color: #64807D; }
+  .nav-item.on { color: #39C5BB; }
+  .nav-item svg { width: 19px; height: 19px; }
+  .nav-pill { background: rgba(57,197,187,0.12); border-radius: 14px; padding: 5px 15px; }
+  /* 课表 */
+  .row-between { display: flex; align-items: center; justify-content: space-between; }
+  .switch { width: 38px; height: 22px; border-radius: 11px; background: #39C5BB; position: relative; }
+  .switch::after { content:''; position:absolute; right:2px; top:2px; width:18px; height:18px; border-radius:50%; background:#fff; }
+  .switch.off { background: #64807D; }
+  .switch.off::after { right: auto; left: 2px; }
+  .weeks { display: flex; gap: 5px; margin-bottom: 10px; }
+  .week { width: 30px; height: 28px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #9DB5B2; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .week.on { background: #39C5BB; color: #06272B; font-weight: 700; }
+  .timetable { display: flex; font-size: 8px; }
+  .time-col { width: 30px; padding-top: 21px; color: #64807D; }
+  .time-col div { height: 36px; text-align: right; padding-right: 4px; }
+  .day-col { flex: 1; border-left: 1px solid rgba(255,255,255,0.05); position: relative; }
+  .day-head { height: 20px; text-align: center; color: #9DB5B2; font-weight: 700; padding-top: 2px; }
+  .day-head.today { color: #39C5BB; }
+  .slot { position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 3px; font-size: 7px; line-height: 1.3; font-weight: 700; overflow: hidden; }
+  .slot small { display: block; font-weight: 400; opacity: .75; font-size: 6px; }
+  .c1 { background: rgba(57,197,187,.18); color: #39C5BB; }
+  .c2 { background: rgba(255,119,183,.18); color: #FF77B7; }
+  .c3 { background: rgba(108,156,255,.18); color: #6C9CFF; }
+  .c4 { background: rgba(255,179,71,.18); color: #FFB347; }
+  /* 设置 */
+  .slot-row { display: flex; align-items: center; justify-content: space-between; background: #101A1D; border-radius: 12px; padding: 10px 12px; margin-bottom: 7px; }
+  .slot-row .label { font-size: 11px; color: #9DB5B2; margin-bottom: 2px; }
+  .slot-row .t { font-family: Consolas, monospace; font-size: 16px; font-weight: 700; color: #39C5BB; }
+  .slot-row .days { font-size: 9px; color: #9DB5B2; margin-top: 2px; }
+  .opt-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 12px; }
+  .opt-row + .opt-row { border-top: 1px solid rgba(255,255,255,0.05); }
+  .mini-btn { flex: 1; text-align: center; font-size: 11px; color: #EAF3F2; background: #161F22; border: 1px solid rgba(255,255,255,0.08); border-radius: 11px; padding: 10px 0; }
+  .info { background: #15221F; color: #7ECEB8; border-radius: 12px; padding: 10px; font-size: 9px; line-height: 1.6; margin-top: 10px; }
+  /* 提醒 */
+  .alert {
+    height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0 26px; background:
+      radial-gradient(500px 420px at 80% 12%, rgba(57,197,187,.10), transparent 70%),
+      radial-gradient(460px 380px at 12% 88%, rgba(255,119,183,.07), transparent 70%),
+      linear-gradient(180deg, rgba(11,16,19,.97), rgba(11,16,19,1));
+  }
+  .alert .emoji { font-size: 88px; line-height: 1; }
+  .char-card {
+    width: 132px; height: 132px; border-radius: 28px; overflow: hidden;
+    background: #fff; margin: 10px 0 4px; transform: rotate(-2deg);
+    border: 1px solid rgba(255,255,255,.7);
+    box-shadow: 0 16px 32px rgba(0,0,0,.45);
+  }
+  .char-card img { width: 100%; height: 100%; object-fit: cover; }
+  .alert .name { font-size: 12px; color: rgba(255,255,255,.6); letter-spacing: 1px; margin-bottom: 20px; }
+  .glass {
+    width: 100%; background: rgba(255,255,255,.90); border: 1px solid rgba(255,255,255,.75);
+    border-radius: 22px; padding: 24px 20px; text-align: center; color: #12393E;
+    font-size: 19px; font-weight: 700; line-height: 1.45; margin-bottom: 24px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  }
+  .alert .btn.primary { width: 100%; padding: 15px 0; font-size: 14px; border-radius: 14px; }
+</style>
+</head>
+<body>
+
+<!-- 1. 学习统计 -->
+<div class="phone" id="p1">
+  <div class="status"><span>23:17</span><span class="right">5G  ▂▄▆  🔋55</span></div>
+  <div class="content">
+    <h1>📊 学习统计</h1>
+    <div class="date">11月11日 星期三</div>
+
+    <div class="card center">
+      <div class="ring"><div class="ring-inner">
+        <div class="live"><span class="dot"></span>学习中</div>
+        <div class="time">00:42:15</div>
+        <div class="remain">剩余 48 分钟</div>
+      </div></div>
+      <button class="btn ghost">结束学习</button>
+    </div>
+
+    <div class="section">今日概览</div>
+    <div class="card"><div class="stats">
+      <div class="stat"><b class="accent">2h36m</b><span>学习时长</span></div>
+      <div class="stat"><b class="pink">3</b><span>摸鱼次数</span></div>
+    </div></div>
+
+    <div class="section">学习趋势</div>
+    <div class="card">
+      <div class="seg"><div class="seg-item active">本周</div><div class="seg-item">本月</div></div>
+      <div class="period"><b>◀</b>11.09 ~ 11.15<b>▶</b></div>
+      <div class="stats">
+        <div class="stat"><b class="accent">18h20m</b><span>周总时长</span></div>
+        <div class="stat"><b class="pink">7次</b><span>周摸鱼</span></div>
+      </div>
+      <div class="chart">
+        <div class="bar-col"><div class="bar-val">40</div><div class="bar-bg"><div class="bar-fill" style="height:40%"></div></div><div class="bar-lbl">一</div></div>
+        <div class="bar-col"><div class="bar-val">65</div><div class="bar-bg"><div class="bar-fill" style="height:65%"></div></div><div class="bar-lbl">二</div></div>
+        <div class="bar-col"><div class="bar-val">30</div><div class="bar-bg"><div class="bar-fill" style="height:30%"></div></div><div class="bar-lbl">三</div></div>
+        <div class="bar-col"><div class="bar-val">90</div><div class="bar-bg"><div class="bar-fill" style="height:90%"></div></div><div class="bar-lbl">四</div></div>
+        <div class="bar-col"><div class="bar-val">55</div><div class="bar-bg"><div class="bar-fill" style="height:55%"></div></div><div class="bar-lbl">五</div></div>
+        <div class="bar-col"><div class="bar-val">20</div><div class="bar-bg"><div class="bar-fill" style="height:20%"></div></div><div class="bar-lbl">六</div></div>
+        <div class="bar-col"><div class="bar-val">75</div><div class="bar-bg"><div class="bar-fill" style="height:75%"></div></div><div class="bar-lbl">日</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item on"><span class="nav-pill"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg></span>学习</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>课表</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>设置</div>
+  </div>
+</div>
+
+<!-- 2. 课表 -->
+<div class="phone" id="p2">
+  <div class="status"><span>23:17</span><span class="right">5G  ▂▄▆  🔋55</span></div>
+  <div class="content">
+    <h1>📅 课表模式</h1>
+    <div class="date">第 11 周 · 共 16 周</div>
+
+    <div class="card" style="padding: 10px 14px; margin-bottom: 10px;">
+      <div class="row-between">
+        <div>
+          <div style="font-size:12px; font-weight:600;">监督开关</div>
+          <div style="font-size:9px; color:#64807D; margin-top:2px;">当前第 11 周</div>
+        </div>
+        <div class="switch"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom: 12px;">
+      <button class="btn primary" style="flex:1; padding:10px 0; font-size:12px;">导入课表</button>
+      <button class="btn ghost" style="flex:1; padding:10px 0; font-size:12px;">清空课表</button>
+    </div>
+
+    <div class="weeks">
+      <div class="week">9</div><div class="week">10</div><div class="week on">11</div>
+      <div class="week">12</div><div class="week">13</div><div class="week">14</div>
+      <div class="week">15</div><div class="week">16</div>
+    </div>
+
+    <div class="card" style="padding: 10px;">
+      <div class="timetable">
+        <div class="time-col"><div>08:00</div><div>09:00</div><div>10:00</div><div>11:00</div><div>12:00</div><div>13:00</div><div>14:00</div></div>
+        <div class="day-col">
+          <div class="day-head">一</div>
+          <div class="slot c1" style="top:20px; height:70px;">高等数学<small>A103</small></div>
+          <div class="slot c3" style="top:128px; height:52px;">大学物理<small>B204</small></div>
+        </div>
+        <div class="day-col">
+          <div class="day-head">二</div>
+          <div class="slot c2" style="top:56px; height:70px;">大学英语<small>C301</small></div>
+          <div class="slot c4" style="top:164px; height:52px;">体育<small>操场</small></div>
+        </div>
+        <div class="day-col">
+          <div class="day-head today">三</div>
+          <div class="slot c3" style="top:20px; height:70px;">数据结构<small>A205</small></div>
+          <div class="slot c1" style="top:164px; height:52px;">算法设计<small>A205</small></div>
+        </div>
+        <div class="day-col">
+          <div class="day-head">四</div>
+          <div class="slot c4" style="top:92px; height:70px;">毛泽东思想<small>D102</small></div>
+        </div>
+        <div class="day-col">
+          <div class="day-head">五</div>
+          <div class="slot c2" style="top:20px; height:52px;">形势与政策<small>E101</small></div>
+          <div class="slot c3" style="top:128px; height:70px;">计算机网络<small>B302</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg>学习</div>
+    <div class="nav-item on"><span class="nav-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>课表</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>设置</div>
+  </div>
+</div>
+
+<!-- 3. 设置 -->
+<div class="phone" id="p3">
+  <div class="status"><span>23:17</span><span class="right">5G  ▂▄▆  🔋55</span></div>
+  <div class="content">
+    <h1>🎧 学习提醒器</h1>
+    <div class="date">提醒方式与学习监督</div>
+
+    <div class="section">学习时间段</div>
+    <div class="card" style="padding: 12px 14px;">
+      <div class="row-between" style="margin-bottom: 10px;">
+        <div style="font-size:13px; font-weight:700;">📅 学习时间段</div>
+        <button class="btn primary" style="padding:7px 14px; font-size:11px;">＋ 添加</button>
+      </div>
+      <div class="slot-row">
+        <div>
+          <div class="label">上午自习</div>
+          <div class="t">10:00  →  11:30</div>
+          <div class="days">周一 周二 周三 周四 周五</div>
+        </div>
+        <div class="switch"></div>
+      </div>
+      <div class="slot-row" style="margin-bottom:0;">
+        <div>
+          <div class="label">晚间复习</div>
+          <div class="t">19:00  →  21:00</div>
+          <div class="days">每天</div>
+        </div>
+        <div class="switch"></div>
+      </div>
+    </div>
+
+    <div class="section">提醒方式</div>
+    <div class="card" style="padding: 8px 14px;">
+      <div class="opt-row"><span>🔔 通知提醒（多次刷新）</span><div class="switch"></div></div>
+      <div class="opt-row"><span>💊 超级岛提醒</span><div class="switch"></div></div>
+      <div class="opt-row"><span>📱 全屏弹出（确认返桌面）</span><div class="switch off"></div></div>
+      <div class="opt-row"><span>🏠 强制返回桌面</span><div class="switch off"></div></div>
+      <div class="info" style="margin: 8px 0 6px;">💡 时间段到点提醒无需无障碍权限，直接生效。无障碍仅用于检测学习中途切换应用。</div>
+    </div>
+
+    <div class="section">其他</div>
+    <div class="card" style="padding: 8px 14px;">
+      <div class="opt-row"><span>🌙 深色模式</span><div class="switch"></div></div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <div class="mini-btn">✅ 白名单</div>
+        <div class="mini-btn">♿ 无障碍（可选）</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg>学习</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>课表</div>
+    <div class="nav-item on"><span class="nav-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>设置</div>
+  </div>
+</div>
+
+<!-- 4. 全屏提醒 -->
+<div class="phone" id="p4">
+  <div class="status"><span>23:17</span><span class="right">5G  ▂▄▆  🔋55</span></div>
+  <div class="alert" style="height: 804px;">
+    <div class="emoji">😤</div>
+    <div class="char-card"><img src="ic_character_default.png" alt="character"></div>
+    <div class="name">学习监督者</div>
+    <div class="glass">还在玩？！<br>学习时间到了！！</div>
+    <button class="btn primary">✅ 知道了，返回桌面去学习</button>
+  </div>
+</div>
+
+</body>
+</html>

@@ -11,8 +11,8 @@ android {
         applicationId "com.study.reminder"
         minSdk 29
         targetSdk 34
-        versionCode 64
-        versionName "2.4.1"
+        versionCode 65
+        versionName "2.4.2"
     }
 
     buildFeatures {

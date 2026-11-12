@@ -2,6 +2,7 @@ package com.study.reminder.model
 
 import android.content.Context
 import android.util.Log
+import com.study.reminder.helper.StudyTimeCache
 import org.json.JSONArray
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,6 +33,8 @@ object CourseScheduleRepository {
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().putString(PREF_COURSES, arr.toString()).apply()
         cachedCourses = courses
+        // 课表变化后立即让“是否在学习时段”缓存失效
+        StudyTimeCache.invalidate()
     }
 
     fun addCourses(context: Context, courses: List<CourseSchedule>) {
@@ -47,6 +50,8 @@ object CourseScheduleRepository {
     fun removeAllCourses(context: Context) {
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().remove(PREF_COURSES).apply()
+        cachedCourses = null
+        StudyTimeCache.invalidate()
     }
 
     fun toggleCourse(context: Context, id: Long) {

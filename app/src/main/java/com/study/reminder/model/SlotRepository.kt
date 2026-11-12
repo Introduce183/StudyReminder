@@ -2,6 +2,7 @@ package com.study.reminder.model
 
 import android.content.Context
 import android.util.Log
+import com.study.reminder.helper.StudyTimeCache
 import org.json.JSONArray
 
 object SlotRepository {
@@ -26,6 +27,8 @@ object SlotRepository {
         context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
             .edit().putString(PREF_KEY, arr.toString()).apply()
         cachedSlots = slots.toMutableList()
+        // 时间段开关变化后立即让“是否在学习时段”缓存失效
+        StudyTimeCache.invalidate()
     }
 
     fun addSlot(context: Context, slot: StudySlot) {
