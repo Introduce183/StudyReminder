@@ -5,10 +5,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import com.study.reminder.service.SnoozeReceiver
 
 /**
  * 「再看 30 秒」：延迟一段时间后重新触发全屏提醒。
+ * 在这段时间内暂停无障碍监督，避免点完立刻又被弹窗。
  */
 object SnoozeScheduler {
 
@@ -16,7 +18,16 @@ object SnoozeScheduler {
     const val DEFAULT_DELAY_SECONDS = 30
     private const val REQUEST_CODE = 7001
 
+    @Volatile private var snoozeUntilElapsed = 0L
+
+    fun isSnoozing(): Boolean = SystemClock.elapsedRealtime() < snoozeUntilElapsed
+
+    fun onTriggered() {
+        snoozeUntilElapsed = 0L
+    }
+
     fun schedule(context: Context, delaySeconds: Int = DEFAULT_DELAY_SECONDS) {
+        snoozeUntilElapsed = SystemClock.elapsedRealtime() + delaySeconds * 1000L
         val pending = pendingIntent(context)
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val triggerAt = System.currentTimeMillis() + delaySeconds * 1000L
@@ -34,6 +45,7 @@ object SnoozeScheduler {
     }
 
     fun cancel(context: Context) {
+        snoozeUntilElapsed = 0L
         val pending = pendingIntent(context)
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancel(pending)

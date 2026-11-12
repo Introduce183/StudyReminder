@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import com.study.reminder.helper.ReminderDispatcher
 import android.view.accessibility.AccessibilityEvent
+import com.study.reminder.helper.SnoozeScheduler
 import com.study.reminder.helper.StudyTimeCache
 import com.study.reminder.helper.WhitelistManager
 import com.study.reminder.model.CourseScheduleRepository
@@ -85,7 +86,13 @@ class ScreenAccessibilityService : AccessibilityService() {
             return
         }
         if (pkg == packageName) {
-            resetAppReminderGuard()
+            // 只有真正打开主界面才重置冷却；
+            // 悬浮窗 / 提醒 Activity 不能被当成“离开分心应用”
+            if (event.className?.toString() ==
+                com.study.reminder.ui.MainActivity::class.java.name
+            ) {
+                resetAppReminderGuard()
+            }
             return
         }
         checkAndRemind(pkg)
@@ -113,6 +120,9 @@ class ScreenAccessibilityService : AccessibilityService() {
             resetAppReminderGuard()
             return
         }
+
+        // 「再看 30 秒」期间暂停无障碍监督，避免点完立刻又被弹窗
+        if (SnoozeScheduler.isSnoozing()) return
 
         // 以实时数据为准：没有启用中的时间段 / 进行中的课程 /
         // 手动开始的学习会话时，不提醒、也不启动计时。
