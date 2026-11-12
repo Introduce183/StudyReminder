@@ -38,6 +38,7 @@ import com.study.reminder.helper.CourseScheduler
 import com.study.reminder.helper.IcsParser
 import com.study.reminder.helper.NotificationHelper
 import com.study.reminder.helper.SlotScheduler
+import com.study.reminder.helper.SnoozeScheduler
 import com.study.reminder.model.CourseSchedule
 import com.study.reminder.model.CourseScheduleRepository
 import com.study.reminder.model.SlotRepository
@@ -76,6 +77,7 @@ class MainActivity : ComponentActivity() {
     private val accessibilityEnabledState = mutableStateOf(false)
     private val keepAliveState = mutableStateOf(true)
     private val batteryOptimizationIgnoredState = mutableStateOf(false)
+    private val snoozeSecondsState = mutableStateOf(SnoozeScheduler.DEFAULT_DELAY_SECONDS)
 
     // Course schedule state
     private val coursesState = mutableStateListOf<CourseSchedule>()
@@ -283,9 +285,14 @@ class MainActivity : ComponentActivity() {
                     accessibilityEnabled = accessibilityEnabledState.value,
                     keepAliveEnabled = keepAliveState.value,
                     batteryOptimizationIgnored = batteryOptimizationIgnoredState.value,
+                    snoozeSeconds = snoozeSecondsState.value,
                     onThemeChange = { isDark ->
                         isDarkThemeState.value = isDark
                         saveThemePreference(isDark)
+                    },
+                    onSnoozeSecondsChange = { seconds ->
+                        snoozeSecondsState.value = seconds
+                        SnoozeScheduler.setSnoozeSeconds(activity, seconds)
                     },
                     onKeepAliveChange = { enabled ->
                         keepAliveState.value = enabled
@@ -472,6 +479,7 @@ class MainActivity : ComponentActivity() {
         forceHomeState.value = prefs.getBoolean("opt_force_home", false)
         isDarkThemeState.value = prefs.getBoolean("opt_dark_theme", true)
         keepAliveState.value = prefs.getBoolean("opt_keep_alive", true)
+        snoozeSecondsState.value = SnoozeScheduler.getSnoozeSeconds(this)
     }
 
     private fun saveOptions() {

@@ -15,10 +15,25 @@ import com.study.reminder.service.SnoozeReceiver
 object SnoozeScheduler {
 
     const val ACTION_SNOOZE = "com.study.reminder.SNOOZE_TRIGGER"
+    const val PREF_SNOOZE_SECONDS = "opt_snooze_seconds"
     const val DEFAULT_DELAY_SECONDS = 30
+    val OPTIONS = listOf(5, 10, 15, 30, 60)
     private const val REQUEST_CODE = 7001
 
     @Volatile private var snoozeUntilElapsed = 0L
+
+    fun getSnoozeSeconds(context: Context): Int {
+        val prefs = context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+        val seconds = prefs.getInt(PREF_SNOOZE_SECONDS, DEFAULT_DELAY_SECONDS)
+        return if (seconds in OPTIONS) seconds else DEFAULT_DELAY_SECONDS
+    }
+
+    fun setSnoozeSeconds(context: Context, seconds: Int) {
+        context.getSharedPreferences("study_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putInt(PREF_SNOOZE_SECONDS, seconds)
+            .apply()
+    }
 
     fun isSnoozing(): Boolean = SystemClock.elapsedRealtime() < snoozeUntilElapsed
 

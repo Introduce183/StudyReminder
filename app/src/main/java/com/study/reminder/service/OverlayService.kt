@@ -11,6 +11,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.TextView
 import com.study.reminder.R
 import com.study.reminder.helper.NotificationHelper
@@ -179,17 +180,19 @@ class OverlayService : Service() {
         view.animate().alpha(1f).setDuration(220L).start()
 
         val overlayConfirmButton = view.findViewById<View>(R.id.btn_overlay_confirm)
-        val snoozeButton = view.findViewById<View>(R.id.btn_overlay_snooze)
+        val snoozeButton = view.findViewById<Button>(R.id.btn_overlay_snooze)
+        val snoozeSeconds = SnoozeScheduler.getSnoozeSeconds(this)
 
         if (goHomeOnShow) {
-            // 强制返回桌面模式：不提供「再看 30 秒」
+            // 强制返回桌面模式：不提供「再看 X 秒」
             snoozeButton.visibility = View.GONE
         } else {
             snoozeButton.visibility = View.VISIBLE
+            snoozeButton.text = "👀 再看 $snoozeSeconds 秒"
             snoozeButton.setOnClickListener {
                 NotificationHelper.cancelAlert(this)
                 removeFullscreenAlert()
-                SnoozeScheduler.schedule(this, SnoozeScheduler.DEFAULT_DELAY_SECONDS)
+                SnoozeScheduler.schedule(this, snoozeSeconds)
                 stopSelf()
             }
         }

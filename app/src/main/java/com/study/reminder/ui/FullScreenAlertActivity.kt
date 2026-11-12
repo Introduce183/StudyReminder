@@ -79,11 +79,13 @@ class FullScreenAlertActivity : AppCompatActivity() {
         binding.tvAlertMessage.alpha = 0f
         binding.tvAlertMessage.animate().alpha(1f).setStartDelay(300).setDuration(400).start()
 
-        // 强制返回桌面模式不提供「再看 30 秒」
+        // 强制返回桌面模式不提供「再看 X 秒」
+        val snoozeSeconds = SnoozeScheduler.getSnoozeSeconds(this)
         binding.btnSnooze.visibility = if (goHomeOnShow) android.view.View.GONE else android.view.View.VISIBLE
+        binding.btnSnooze.text = "👀 再看 $snoozeSeconds 秒"
         binding.btnSnooze.setOnClickListener {
             NotificationHelper.cancelAlert(this)
-            SnoozeScheduler.schedule(this, SnoozeScheduler.DEFAULT_DELAY_SECONDS)
+            SnoozeScheduler.schedule(this, snoozeSeconds)
             finish()
         }
 

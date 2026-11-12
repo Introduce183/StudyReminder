@@ -1,5 +1,6 @@
 package com.study.reminder.ui.compose
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.study.reminder.R
+import com.study.reminder.helper.SnoozeScheduler
 import com.study.reminder.model.StudySlot
 
 @Composable
@@ -28,6 +31,7 @@ fun SettingsScreen(
     accessibilityEnabled: Boolean = false,
     keepAliveEnabled: Boolean = true,
     batteryOptimizationIgnored: Boolean = false,
+    snoozeSeconds: Int = SnoozeScheduler.DEFAULT_DELAY_SECONDS,
     onAddSlot: () -> Unit,
     onToggleSlot: (StudySlot) -> Unit,
     onDeleteSlot: (StudySlot) -> Unit,
@@ -40,7 +44,8 @@ fun SettingsScreen(
     onAccessibilityGuide: () -> Unit,
     onThemeChange: (Boolean) -> Unit = {},
     onKeepAliveChange: (Boolean) -> Unit = {},
-    onRequestBatteryOptimization: () -> Unit = {}
+    onRequestBatteryOptimization: () -> Unit = {},
+    onSnoozeSecondsChange: (Int) -> Unit = {}
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -174,6 +179,60 @@ fun SettingsScreen(
                                     uncheckedBorderColor = AppColors.TextTertiary
                                 )
                             )
+                        }
+
+                        // 再看时长
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "⏱️", fontSize = 15.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "再看时长",
+                                    color = AppColors.TextPrimary,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "提醒页「再看」的延迟时间",
+                                    color = AppColors.TextTertiary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            SnoozeScheduler.OPTIONS.forEach { seconds ->
+                                val selected = seconds == snoozeSeconds
+                                Surface(
+                                    shape = RoundedCornerShape(CornerRadius.sm),
+                                    color = if (selected) AppColors.Accent else AppColors.CardBgSoft,
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (selected) AppColors.Accent else AppColors.LightDivider
+                                    ),
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onSnoozeSecondsChange(seconds) }
+                                ) {
+                                    Text(
+                                        text = "${seconds}秒",
+                                        fontSize = 10.sp,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                        color = if (selected) OnAccent else AppColors.TextSecondary,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 7.dp)
+                                    )
+                                }
+                            }
                         }
 
                         // 后台保活
